@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ERCC 농구 클립 모음 (밝은 버전)</title>
+<title>ERCC 농구 클립 모음</title>
 <style>
   :root {
     --bg: #fafbfc;
@@ -37,6 +37,11 @@
     font-size: 32px;
     font-weight: 800;
     letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
   }
   header h1 .tag {
     display: inline-block;
@@ -49,6 +54,18 @@
     margin-right: 12px;
     vertical-align: 4px;
   }
+  .add-btn {
+    background: var(--accent);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 700;
+    transition: background 0.15s;
+  }
+  .add-btn:hover { background: #e85d00; }
+  .add-btn::before { content: "+ "; }
   .meta {
     color: var(--muted);
     font-size: 16px;
@@ -77,6 +94,13 @@
     color: #fff;
   }
   main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+  #status {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 18px;
+  }
+  #status.error { color: #d93025; }
   section.group {
     background: var(--card);
     border: 2px solid var(--border);
@@ -186,6 +210,7 @@
   @media (max-width: 700px) {
     body { font-size: 16px; }
     header h1 { font-size: 26px; }
+    .add-btn { padding: 8px 14px; font-size: 14px; }
     th, td { padding: 10px 12px; font-size: 15px; }
     th:nth-last-child(1), td:nth-last-child(1) { display: none; }
     section.group h2 { font-size: 18px; padding: 14px 16px; }
@@ -194,51 +219,41 @@
 </head>
 <body>
 <header>
-  <h1><span class="tag">ERCC</span>농구 클립 모음</h1>
-  <div class="meta">으랏차차 농구 · 총 <span id="total"></span>개 클립 · 업데이트 2026-04-21</div>
+  <h1>
+    <span><span class="tag">ERCC</span>농구 클립 모음</span>
+    <a class="add-btn" href="submit.html">클립 등록</a>
+  </h1>
+  <div class="meta">으랏차차 농구 · 총 <span id="total">-</span>개 클립</div>
   <nav class="tabs">
     <button data-view="by-game" class="active">게임별</button>
-    <button data-view="by-player">개인별 (Player 1)</button>
+    <button data-view="by-player">개인별 (선수 1)</button>
   </nav>
 </header>
 
 <main>
-  <div id="by-game" class="view active"></div>
-  <div id="by-player" class="view"></div>
+  <div id="status">클립 로딩 중...</div>
+  <div id="by-game" class="view active" hidden></div>
+  <div id="by-player" class="view" hidden></div>
 </main>
 
 <footer>
-  Generated from Google Sheets · <a href="https://docs.google.com/spreadsheets/d/15gS2oFs7mlDyL7JnEZ5CX9BzjXYB5kA4Pv1sDtMOU-s/edit" target="_blank" rel="noopener">원본 시트 열기</a>
+  Powered by Supabase · <a href="submit.html">클립 등록하기</a>
 </footer>
 
-<script>
-const clips = [
-  { seq: 1,  url: "https://youtu.be/NufN9CMZbHU?t=53",  p1: "용현", p2: "",     title: "캥거루처럼",                          kind: "속공",   author: "두현71", date: "20260418", game: 12 },
-  { seq: 2,  url: "https://youtu.be/jYQLF9xe9b0?t=13",  p1: "두현", p2: "종철", title: "우측 베이스라인 클린",                 kind: "미들슛", author: "두현71", date: "20260418", game: 10 },
-  { seq: 3,  url: "https://youtu.be/fN-d5JqDkIY?t=40",  p1: "종철", p2: "",     title: "종철의 드라이빈",                      kind: "림어택", author: "두현71", date: "20260418", game: 3 },
-  { seq: 4,  url: "https://youtu.be/fN-d5JqDkIY?t=99",  p1: "두현", p2: "",     title: "링에다 패스",                          kind: "Funny",  author: "두현71", date: "20260418", game: 3 },
-  { seq: 5,  url: "https://youtu.be/fN-d5JqDkIY?t=165", p1: "두현", p2: "",     title: "뛰다가 갑자기 고관절 재발",            kind: "기타",   author: "두현71", date: "20260418", game: 3 },
-  { seq: 6,  url: "https://youtu.be/fN-d5JqDkIY?t=240", p1: "두현", p2: "효열", title: "골은 실패했지만 아쉬운 패스",          kind: "기타",   author: "두현71", date: "20260418", game: 3 },
-  { seq: 7,  url: "https://youtu.be/fN-d5JqDkIY?t=294", p1: "종민", p2: "",     title: "왼쪽에서 나이스 플로터 뱅크슛",        kind: "속공",   author: "두현71", date: "20260418", game: 3 },
-  { seq: 8,  url: "https://youtu.be/fN-d5JqDkIY?t=322", p1: "충환", p2: "성욱", title: "왼쪽 중거리슛",                        kind: "미들슛", author: "두현71", date: "20260418", game: 3 },
-  { seq: 9,  url: "https://youtu.be/fN-d5JqDkIY?t=393", p1: "충환", p2: "성욱", title: "알까기",                               kind: "Funny",  author: "두현71", date: "20260418", game: 3 },
-  { seq: 10, url: "https://youtu.be/fN-d5JqDkIY?t=420", p1: "충환", p2: "종민", title: "우측 미들슛",                          kind: "미들슛", author: "두현71", date: "20260418", game: 3 },
-  { seq: 11, url: "https://youtu.be/fN-d5JqDkIY?t=452", p1: "성욱", p2: "종민", title: "나이스 컷인 그러나",                   kind: "Funny",  author: "두현71", date: "20260418", game: 3 },
-  { seq: 12, url: "https://youtu.be/fN-d5JqDkIY?t=470", p1: "성현", p2: "성욱", title: "농구코트에서 야구를",                  kind: "Funny",  author: "두현71", date: "20260418", game: 3 },
-  { seq: 13, url: "https://youtu.be/fN-d5JqDkIY?t=573", p1: "충환", p2: "",     title: "왼쪽 골밑 기름손",                     kind: "Funny",  author: "두현71", date: "20260418", game: 3 },
-  { seq: 14, url: "https://youtu.be/fN-d5JqDkIY?t=582", p1: "광준", p2: "두현", title: "속공패스 받아서 페이크후 골밑슛",       kind: "속공",   author: "두현71", date: "20260418", game: 3 },
-  { seq: 15, url: "https://youtu.be/fN-d5JqDkIY?t=596", p1: "두현", p2: "종민", title: "나를 들었다놨다하는",                  kind: "Funny",  author: "두현71", date: "20260418", game: 3 },
-  { seq: 16, url: "https://youtu.be/fN-d5JqDkIY?t=604", p1: "성욱", p2: "",     title: "반박자 빠른 슛",                       kind: "미들슛", author: "두현71", date: "20260418", game: 3 },
-  { seq: 17, url: "https://youtu.be/-oGY3wPWXdo?t=584", p1: "동율", p2: "",     title: "동율 개그 으랏차차",                   kind: "Funny",  author: "두현71", date: "20260418", game: 11 },
-  { seq: 18, url: "https://youtu.be/0K6eWqpduYo?t=153", p1: "원목", p2: "재민", title: "센터의 3점슛",                         kind: "3점",    author: "두현71", date: "20260418", game: 9 },
-];
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const fmtDate = d => `${d.slice(0,4)}/${d.slice(4,6)}/${d.slice(6,8)}`;
-const kindClass = k => k.replace(/[^가-힣A-Za-z0-9]/g, '');
+const SUPABASE_URL = 'https://wfwzxnyelpbgjxlovjgo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indmd3p4bnllbHBiZ2p4bG92amdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNDM3NDcsImV4cCI6MjA3NTkxOTc0N30.STu6r2vK5ghEBXHXF_IYdJPsjaxc0efUEUn3pbSrAXM';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const fmtDate = d => d ? `${d.slice(0,4)}/${d.slice(4,6)}/${d.slice(6,8)}` : '날짜 미정';
+const kindClass = k => (k || '').replace(/[^가-힣A-Za-z0-9]/g, '');
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 const ytLabel = url => {
-  const m = url.match(/\?t=(\d+)/);
+  const m = (url || '').match(/\?t=(\d+)/);
   if (!m) return "열기";
   const s = +m[1];
   const mm = Math.floor(s/60), ss = s % 60;
@@ -248,85 +263,125 @@ const ytLabel = url => {
 const linkCell = url => `<a class="yt" href="${esc(url)}" target="_blank" rel="noopener">${ytLabel(url)}</a>`;
 const kindCell = k => `<span class="kind ${kindClass(k)}">${esc(k)}</span>`;
 
-document.getElementById('total').textContent = clips.length;
+async function loadClips() {
+  const statusEl = document.getElementById('status');
+  const { data, error } = await supabase
+    .from('ercc_clips')
+    .select('id, start_url, end_url, player1, player2, title, kind, author, game_date, game_num')
+    .order('game_date', { ascending: true, nullsFirst: false })
+    .order('game_num',  { ascending: true, nullsFirst: false })
+    .order('id',        { ascending: true });
 
-// ========== 게임별 뷰 (경기일이 맨앞 = 섹션 헤더) ==========
-const byGame = {};
-for (const c of clips) {
-  const key = `${c.date}_${String(c.game).padStart(2,'0')}`;
-  (byGame[key] ||= { date: c.date, game: c.game, rows: [] }).rows.push(c);
+  if (error) {
+    statusEl.textContent = `데이터 로드 오류: ${error.message}`;
+    statusEl.classList.add('error');
+    return;
+  }
+
+  const clips = (data || []).map(r => ({
+    seq: r.id,
+    url: r.start_url,
+    p1: r.player1,
+    p2: r.player2 || "",
+    title: r.title,
+    kind: r.kind,
+    author: r.author,
+    date: r.game_date || "미분류",
+    game: r.game_num ?? '?'
+  }));
+
+  document.getElementById('total').textContent = clips.length;
+
+  if (clips.length === 0) {
+    statusEl.textContent = '아직 등록된 클립이 없습니다.';
+    return;
+  }
+
+  render(clips);
+  statusEl.hidden = true;
+  document.getElementById('by-game').hidden = false;
+  document.getElementById('by-player').hidden = false;
 }
-const gameKeys = Object.keys(byGame).sort();
 
-const gameHtml = gameKeys.map(k => {
-  const g = byGame[k];
-  g.rows.sort((a,b) => a.seq - b.seq);
-  const rows = g.rows.map(c => `
-    <tr>
-      <td>${linkCell(c.url)}</td>
-      <td class="player">${esc(c.p1)}</td>
-      <td class="player2">${c.p2 ? esc(c.p2) : '<span class="empty">-</span>'}</td>
-      <td class="title-cell">${esc(c.title)}</td>
-      <td>${kindCell(c.kind)}</td>
-      <td class="author">${esc(c.author)}</td>
-    </tr>
-  `).join('');
-  return `
-    <section class="group">
-      <h2>${fmtDate(g.date)} &nbsp;·&nbsp; GAME ${g.game}<span class="count">${g.rows.length}개</span></h2>
-      <table>
-        <thead><tr>
-          <th style="width:100px">영상</th>
-          <th style="width:90px">Player 1</th>
-          <th style="width:90px">Player 2</th>
-          <th>제목</th>
-          <th style="width:110px">영상타입</th>
-          <th style="width:100px">작성자</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </section>
-  `;
-}).join('');
-document.getElementById('by-game').innerHTML = gameHtml;
+function render(clips) {
+  // ========== 게임별 뷰 ==========
+  const byGame = {};
+  for (const c of clips) {
+    const key = `${c.date}_${String(c.game).padStart(2,'0')}`;
+    (byGame[key] ||= { date: c.date, game: c.game, rows: [] }).rows.push(c);
+  }
+  const gameKeys = Object.keys(byGame).sort();
 
-// ========== 개인별 뷰 (Player 1 기준, 경기일이 맨앞 컬럼) ==========
-const byPlayer = {};
-for (const c of clips) {
-  (byPlayer[c.p1] ||= []).push(c);
+  const gameHtml = gameKeys.map(k => {
+    const g = byGame[k];
+    g.rows.sort((a,b) => a.seq - b.seq);
+    const rows = g.rows.map(c => `
+      <tr>
+        <td>${linkCell(c.url)}</td>
+        <td>${kindCell(c.kind)}</td>
+        <td class="player">${esc(c.p1)}</td>
+        <td class="player2">${c.p2 ? esc(c.p2) : '<span class="empty">-</span>'}</td>
+        <td class="title-cell">${esc(c.title)}</td>
+        <td class="author">${esc(c.author)}</td>
+      </tr>
+    `).join('');
+    return `
+      <section class="group">
+        <h2>${fmtDate(g.date)} &nbsp;·&nbsp; GAME ${g.game}<span class="count">${g.rows.length}개</span></h2>
+        <table>
+          <thead><tr>
+            <th style="width:100px">영상</th>
+            <th style="width:110px">영상타입</th>
+            <th style="width:90px">선수 1</th>
+            <th style="width:90px">선수 2</th>
+            <th>제목</th>
+            <th style="width:100px">작성자</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </section>
+    `;
+  }).join('');
+  document.getElementById('by-game').innerHTML = gameHtml;
+
+  // ========== 개인별 뷰 ==========
+  const byPlayer = {};
+  for (const c of clips) {
+    (byPlayer[c.p1] ||= []).push(c);
+  }
+  const playerKeys = Object.keys(byPlayer).sort((a,b) => a.localeCompare(b, 'ko'));
+
+  const playerHtml = playerKeys.map(name => {
+    const list = byPlayer[name].slice().sort((a,b) => (a.date+a.game).localeCompare(b.date+b.game) || a.seq - b.seq);
+    const rows = list.map(c => `
+      <tr>
+        <td class="date-cell">${fmtDate(c.date)} G${c.game}</td>
+        <td>${linkCell(c.url)}</td>
+        <td>${kindCell(c.kind)}</td>
+        <td class="player2">${c.p2 ? esc(c.p2) : '<span class="empty">-</span>'}</td>
+        <td class="title-cell">${esc(c.title)}</td>
+        <td class="author">${esc(c.author)}</td>
+      </tr>
+    `).join('');
+    return `
+      <section class="group">
+        <h2>${esc(name)}<span class="count">${list.length}개</span></h2>
+        <table>
+          <thead><tr>
+            <th style="width:150px">경기</th>
+            <th style="width:100px">영상</th>
+            <th style="width:110px">영상타입</th>
+            <th style="width:90px">선수 2</th>
+            <th>제목</th>
+            <th style="width:100px">작성자</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </section>
+    `;
+  }).join('');
+  document.getElementById('by-player').innerHTML = playerHtml;
 }
-const playerKeys = Object.keys(byPlayer).sort((a,b) => a.localeCompare(b, 'ko'));
-
-const playerHtml = playerKeys.map(name => {
-  const list = byPlayer[name].slice().sort((a,b) => (a.date+a.game).localeCompare(b.date+b.game) || a.seq - b.seq);
-  const rows = list.map(c => `
-    <tr>
-      <td class="date-cell">${fmtDate(c.date)} G${c.game}</td>
-      <td>${linkCell(c.url)}</td>
-      <td class="player2">${c.p2 ? esc(c.p2) : '<span class="empty">-</span>'}</td>
-      <td class="title-cell">${esc(c.title)}</td>
-      <td>${kindCell(c.kind)}</td>
-      <td class="author">${esc(c.author)}</td>
-    </tr>
-  `).join('');
-  return `
-    <section class="group">
-      <h2>${esc(name)}<span class="count">${list.length}개</span></h2>
-      <table>
-        <thead><tr>
-          <th style="width:150px">경기</th>
-          <th style="width:100px">영상</th>
-          <th style="width:90px">Player 2</th>
-          <th>제목</th>
-          <th style="width:110px">영상타입</th>
-          <th style="width:100px">작성자</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </section>
-  `;
-}).join('');
-document.getElementById('by-player').innerHTML = playerHtml;
 
 // ========== 탭 전환 ==========
 document.querySelectorAll('nav.tabs button').forEach(btn => {
@@ -336,6 +391,8 @@ document.querySelectorAll('nav.tabs button').forEach(btn => {
     document.querySelectorAll('main .view').forEach(v => v.classList.toggle('active', v.id === target));
   });
 });
+
+loadClips();
 </script>
 </body>
 </html>

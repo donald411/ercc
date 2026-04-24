@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERCC 클립 등록</title>
+<style>
+  :root {
+    --bg: #fafbfc;
+    --card: #ffffff;
+    --border: #e4e7ec;
+    --border-strong: #cfd4dc;
+    --text: #1a1d23;
+    --muted: #5b6271;
+    --accent: #ff6b00;
+    --accent-soft: #fff1e5;
+    --link: #1a73e8;
+    --success: #1e8e3e;
+    --error: #d93025;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 18px;
+  }
+  header {
+    padding: 32px 24px 20px;
+    border-bottom: 2px solid var(--border);
+    background: var(--bg);
+  }
+  header h1 {
+    margin: 0 0 10px;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  header h1 .tag {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 18px;
+    font-weight: 800;
+    margin-right: 12px;
+    vertical-align: 4px;
+  }
+  .back-btn {
+    background: transparent;
+    color: var(--accent);
+    border: 2px solid var(--accent);
+    padding: 8px 18px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 700;
+    transition: all 0.15s;
+  }
+  .back-btn:hover { background: var(--accent-soft); }
+  .meta { color: var(--muted); font-size: 16px; }
+  main { padding: 24px; max-width: 720px; margin: 0 auto; }
+  .card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+  .field {
+    margin-bottom: 22px;
+  }
+  .field label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+  .field label .req { color: var(--error); margin-left: 4px; }
+  .field .hint {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    font: inherit;
+    padding: 12px 14px;
+    border: 2px solid var(--border-strong);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--text);
+    font-size: 17px;
+    transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  button.submit {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 16px;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button.submit:hover:not(:disabled) { background: #e85d00; }
+  button.submit:disabled { background: #c4c9d1; cursor: not-allowed; }
+  .alert {
+    padding: 14px 18px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+  .alert.success { background: #e6f4ea; color: var(--success); border: 1px solid #81c995; }
+  .alert.error { background: #fce8e6; color: var(--error); border: 1px solid #f28b82; }
+  footer {
+    text-align: center;
+    padding: 28px 20px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  footer a { color: var(--link); }
+  @media (max-width: 700px) {
+    body { font-size: 16px; }
+    header h1 { font-size: 26px; }
+    .card { padding: 20px; }
+    .row2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>
+    <span><span class="tag">ERCC</span>클립 등록</span>
+    <a class="back-btn" href="index.html">← 목록으로</a>
+  </h1>
+  <div class="meta">유튜브 영상의 구간·선수·제목을 입력하면 클립 목록에 자동 추가됩니다.</div>
+</header>
+
+<main>
+  <div class="card">
+    <div id="alert" class="alert" hidden></div>
+    <form id="f">
+      <div class="field">
+        <label>작성자<span class="req">*</span></label>
+        <input name="author" required placeholder="예: 두현71" autocomplete="name">
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>선수 1<span class="req">*</span></label>
+          <input name="player1" required placeholder="예: 두현">
+        </div>
+        <div class="field">
+          <label>선수 2</label>
+          <input name="player2" placeholder="(선택)">
+          <div class="hint">어시스트/페어 있을 때만 입력</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>추천 제목<span class="req">*</span></label>
+        <input name="title" required placeholder="예: 우측 베이스라인 클린 미들슛" maxlength="100">
+      </div>
+
+      <div class="field">
+        <label>영상 타입<span class="req">*</span></label>
+        <select name="kind" required>
+          <option value="">선택하세요</option>
+          <option>속공</option>
+          <option>미들슛</option>
+          <option>3점</option>
+          <option>림어택</option>
+          <option>Funny</option>
+          <option>기타</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>시작 시점 유튜브 URL<span class="req">*</span></label>
+        <input name="start_url" required type="url" placeholder="https://youtu.be/XXXX?t=53" pattern="https?://youtu\.be/[^?]+\?t=\d+.*">
+        <div class="hint">유튜브에서 시작 지점 우클릭 → "현재 시간에 동영상 URL 복사"</div>
+      </div>
+
+      <div class="field">
+        <label>종료 시점 유튜브 URL<span class="req">*</span></label>
+        <input name="end_url" required type="url" placeholder="https://youtu.be/XXXX?t=58" pattern="https?://youtu\.be/[^?]+\?t=\d+.*">
+        <div class="hint">같은 영상의 종료 지점 URL. 시작 URL 과 영상ID가 일치해야 함.</div>
+      </div>
+
+      <button type="submit" class="submit" id="submit-btn">클립 등록</button>
+    </form>
+  </div>
+</main>
+
+<footer>
+  Powered by Supabase · <a href="index.html">클립 목록 보기</a>
+</footer>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const SUPABASE_URL = 'https://wfwzxnyelpbgjxlovjgo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indmd3p4bnllbHBiZ2p4bG92amdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNDM3NDcsImV4cCI6MjA3NTkxOTc0N30.STu6r2vK5ghEBXHXF_IYdJPsjaxc0efUEUn3pbSrAXM';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const form = document.getElementById('f');
+const btn = document.getElementById('submit-btn');
+const alertEl = document.getElementById('alert');
+
+function showAlert(type, msg) {
+  alertEl.className = `alert ${type}`;
+  alertEl.textContent = msg;
+  alertEl.hidden = false;
+  alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function extractVid(url) {
+  const m = (url || '').match(/youtu\.be\/([^?]+)/);
+  return m ? m[1] : null;
+}
+function extractSec(url) {
+  const m = (url || '').match(/[?&]t=(\d+)/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  alertEl.hidden = true;
+
+  const data = Object.fromEntries(new FormData(form));
+  data.player2 = (data.player2 || '').trim() || null;
+
+  // 클라이언트 검증
+  const sVid = extractVid(data.start_url);
+  const eVid = extractVid(data.end_url);
+  const sSec = extractSec(data.start_url);
+  const eSec = extractSec(data.end_url);
+
+  if (!sVid || !eVid) {
+    showAlert('error', 'URL에서 영상 ID를 찾을 수 없습니다. youtu.be/XXXX?t=N 형식이어야 합니다.');
+    return;
+  }
+  if (sVid !== eVid) {
+    showAlert('error', `시작과 종료 URL의 영상 ID가 다릅니다. (${sVid} ≠ ${eVid})`);
+    return;
+  }
+  if (sSec == null || eSec == null) {
+    showAlert('error', 'URL에 ?t=초 파라미터가 있어야 합니다.');
+    return;
+  }
+  if (sSec >= eSec) {
+    showAlert('error', `종료 시점(${eSec}s)이 시작 시점(${sSec}s)보다 뒤여야 합니다.`);
+    return;
+  }
+  if (eSec - sSec > 300) {
+    showAlert('error', '클립 길이가 5분을 초과합니다. 구간을 줄여주세요.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '등록 중...';
+
+  const { error } = await supabase.from('ercc_clips').insert({
+    start_url: data.start_url,
+    end_url:   data.end_url,
+    player1:   data.player1.trim(),
+    player2:   data.player2,
+    title:     data.title.trim(),
+    kind:      data.kind,
+    author:    data.author.trim(),
+  });
+
+  btn.disabled = false;
+  btn.textContent = '클립 등록';
+
+  if (error) {
+    showAlert('error', `등록 실패: ${error.message}`);
+    return;
+  }
+
+  showAlert('success', '클립이 등록되었습니다. 목록에서 확인하세요.');
+  form.reset();
+});
+</script>
+</body>
+</html>
