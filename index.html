@@ -209,11 +209,79 @@
   footer a { color: var(--link); }
   @media (max-width: 700px) {
     body { font-size: 16px; }
-    header h1 { font-size: 26px; }
+    header { padding: 20px 16px 14px; }
+    header h1 { font-size: 22px; gap: 8px; }
+    header h1 .tag { font-size: 14px; padding: 3px 8px; margin-right: 6px; vertical-align: 3px; }
     .add-btn { padding: 8px 14px; font-size: 14px; }
-    th, td { padding: 10px 12px; font-size: 15px; }
-    th:nth-last-child(1), td:nth-last-child(1) { display: none; }
-    section.group h2 { font-size: 18px; padding: 14px 16px; }
+    .meta { font-size: 14px; }
+    nav.tabs { margin-top: 14px; }
+    nav.tabs button { padding: 10px 16px; font-size: 15px; flex: 1; }
+    main { padding: 12px; }
+    section.group { border-radius: 10px; margin-bottom: 14px; }
+    section.group h2 { font-size: 17px; padding: 12px 14px; }
+    section.group h2 .count { font-size: 13px; }
+
+    /* 표 → 카드 레이아웃 전환 */
+    table thead { display: none; }
+    table, table tbody { display: block; width: 100%; }
+    table tr {
+      display: block;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+    }
+    table tr:last-child { border-bottom: none; }
+    table tr:hover { background: #fff; }
+    table tr:hover td { background: transparent; }
+    table td {
+      display: flex;
+      padding: 4px 0;
+      border: none;
+      gap: 10px;
+      align-items: center;
+      font-size: 15px;
+      width: 100%;
+    }
+    table td::before {
+      content: attr(data-label);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      min-width: 52px;
+      flex-shrink: 0;
+      text-transform: uppercase;
+    }
+    /* 첫 줄: 영상 링크 + 영상타입 나란히, 라벨 숨김 */
+    table td.cell-video, table td.cell-kind {
+      display: inline-flex;
+      width: auto;
+      padding: 0;
+      margin-right: 8px;
+    }
+    table td.cell-video::before, table td.cell-kind::before { display: none; }
+    table td.cell-video { margin-bottom: 6px; }
+    table td.cell-kind { margin-bottom: 6px; }
+    /* 제목은 크게 */
+    table td.title-cell {
+      font-size: 16px;
+      font-weight: 700;
+      padding: 8px 0 4px;
+      border-top: 1px dashed var(--border);
+      margin-top: 6px;
+      display: block;
+    }
+    table td.title-cell::before {
+      display: block;
+      margin-bottom: 2px;
+      min-width: 0;
+    }
+    /* 선수1은 강조 */
+    table td.cell-p1 .player { font-size: 16px; }
+    /* 작성자 작게 */
+    table td.cell-author { font-size: 13px; color: var(--muted); }
+    /* 경기일 셀 */
+    table td.cell-date .date-cell { font-size: 14px; }
   }
 </style>
 </head>
@@ -317,12 +385,12 @@ function render(clips) {
     g.rows.sort((a,b) => a.seq - b.seq);
     const rows = g.rows.map(c => `
       <tr>
-        <td>${linkCell(c.url)}</td>
-        <td>${kindCell(c.kind)}</td>
-        <td class="player">${esc(c.p1)}</td>
-        <td class="player2">${c.p2 ? esc(c.p2) : '<span class="empty">-</span>'}</td>
-        <td class="title-cell">${esc(c.title)}</td>
-        <td class="author">${esc(c.author)}</td>
+        <td class="cell-video" data-label="영상">${linkCell(c.url)}</td>
+        <td class="cell-kind" data-label="타입">${kindCell(c.kind)}</td>
+        <td class="cell-p1" data-label="선수1"><span class="player">${esc(c.p1)}</span></td>
+        <td class="player2" data-label="선수2">${c.p2 ? esc(c.p2) : '<span class="empty">-</span>'}</td>
+        <td class="title-cell" data-label="제목">${esc(c.title)}</td>
+        <td class="author cell-author" data-label="작성자">${esc(c.author)}</td>
       </tr>
     `).join('');
     return `
@@ -355,12 +423,12 @@ function render(clips) {
     const list = byPlayer[name].slice().sort((a,b) => (a.date+a.game).localeCompare(b.date+b.game) || a.seq - b.seq);
     const rows = list.map(c => `
       <tr>
-        <td class="date-cell">${fmtDate(c.date)} G${c.game}</td>
-        <td>${linkCell(c.url)}</td>
-        <td>${kindCell(c.kind)}</td>
-        <td class="player2">${c.p2 ? esc(c.p2) : '<span class="empty">-</span>'}</td>
-        <td class="title-cell">${esc(c.title)}</td>
-        <td class="author">${esc(c.author)}</td>
+        <td class="cell-date" data-label="경기"><span class="date-cell">${fmtDate(c.date)} G${c.game}</span></td>
+        <td class="cell-video" data-label="영상">${linkCell(c.url)}</td>
+        <td class="cell-kind" data-label="타입">${kindCell(c.kind)}</td>
+        <td class="player2" data-label="선수2">${c.p2 ? esc(c.p2) : '<span class="empty">-</span>'}</td>
+        <td class="title-cell" data-label="제목">${esc(c.title)}</td>
+        <td class="author cell-author" data-label="작성자">${esc(c.author)}</td>
       </tr>
     `).join('');
     return `
