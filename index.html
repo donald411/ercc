@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERCC 농구 클립 모음 (밝은 버전)</title>
+<style>
+  :root {
+    --bg: #fafbfc;
+    --card: #ffffff;
+    --border: #e4e7ec;
+    --border-strong: #cfd4dc;
+    --text: #1a1d23;
+    --muted: #5b6271;
+    --accent: #ff6b00;
+    --accent-soft: #fff1e5;
+    --link: #1a73e8;
+    --row-hover: #f5f7fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 18px;
+  }
+  header {
+    padding: 32px 24px 20px;
+    border-bottom: 2px solid var(--border);
+    position: sticky; top: 0; background: var(--bg); z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+  header h1 {
+    margin: 0 0 10px;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  header h1 .tag {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 18px;
+    font-weight: 800;
+    margin-right: 12px;
+    vertical-align: 4px;
+  }
+  .meta {
+    color: var(--muted);
+    font-size: 16px;
+  }
+  nav.tabs {
+    display: flex;
+    gap: 6px;
+    margin-top: 18px;
+  }
+  nav.tabs button {
+    background: var(--card);
+    border: 2px solid var(--border-strong);
+    color: var(--text);
+    padding: 12px 24px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 600;
+    border-bottom: none;
+    transition: all 0.15s;
+  }
+  nav.tabs button:hover { background: var(--accent-soft); }
+  nav.tabs button.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+  section.group {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 22px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+  section.group h2 {
+    margin: 0;
+    padding: 18px 22px;
+    font-size: 22px;
+    font-weight: 700;
+    background: var(--accent-soft);
+    border-bottom: 2px solid var(--border);
+    color: var(--accent);
+    letter-spacing: -0.01em;
+  }
+  section.group h2 .count {
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 16px;
+    margin-left: 10px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 17px;
+  }
+  th, td {
+    padding: 14px 18px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  th {
+    font-weight: 700;
+    color: var(--muted);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: #f5f7fa;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--row-hover); }
+  a.yt {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffecec;
+    color: #d93025;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    transition: background 0.15s;
+  }
+  a.yt:hover { background: #ffd0d0; }
+  a.yt::before { content: "▶"; font-size: 13px; }
+  .kind {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .kind.속공 { background: #e6f4ea; color: #1e8e3e; }
+  .kind.미들슛 { background: #e8f0fe; color: #1967d2; }
+  .kind.3점 { background: #f3e8fd; color: #8430ce; }
+  .kind.림어택 { background: #fef0e3; color: #e8710a; }
+  .kind.Funny { background: #fef7e0; color: #c99a00; }
+  .kind.기타 { background: #eceff1; color: #546e7a; }
+  .player {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 18px;
+  }
+  .player2 {
+    color: var(--text);
+    font-weight: 500;
+  }
+  .author {
+    color: var(--muted);
+    font-size: 15px;
+  }
+  .title-cell { color: var(--text); font-weight: 500; }
+  .date-cell {
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .empty { color: #c4c9d1; }
+  .view { display: none; }
+  .view.active { display: block; }
+  footer {
+    text-align: center;
+    padding: 28px 20px;
+    color: var(--muted);
+    font-size: 15px;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--link); }
+  @media (max-width: 700px) {
+    body { font-size: 16px; }
+    header h1 { font-size: 26px; }
+    th, td { padding: 10px 12px; font-size: 15px; }
+    th:nth-last-child(1), td:nth-last-child(1) { display: none; }
+    section.group h2 { font-size: 18px; padding: 14px 16px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="tag">ERCC</span>농구 클립 모음</h1>
+  <div class="meta">으랏차차 농구 · 총 <span id="total"></span>개 클립 · 업데이트 2026-04-21</div>
+  <nav class="tabs">
+    <button data-view="by-game" class="active">게임별</button>
+    <button data-view="by-player">개인별 (Player 1)</button>
+  </nav>
+</header>
+
+<main>
+  <div id="by-game" class="view active"></div>
+  <div id="by-player" class="view"></div>
+</main>
+
+<footer>
+  Generated from Google Sheets · <a href="https://docs.google.com/spreadsheets/d/15gS2oFs7mlDyL7JnEZ5CX9BzjXYB5kA4Pv1sDtMOU-s/edit" target="_blank" rel="noopener">원본 시트 열기</a>
+</footer>
+
+<script>
+const clips = [
+  { seq: 1,  url: "https://youtu.be/NufN9CMZbHU?t=53",  p1: "용현", p2: "",     title: "캥거루처럼",                          kind: "속공",   author: "두현71", date: "20260418", game: 12 },
+  { seq: 2,  url: "https://youtu.be/jYQLF9xe9b0?t=13",  p1: "두현", p2: "종철", title: "우측 베이스라인 클린",                 kind: "미들슛", author: "두현71", date: "20260418", game: 10 },
+  { seq: 3,  url: "https://youtu.be/fN-d5JqDkIY?t=40",  p1: "종철", p2: "",     title: "종철의 드라이빈",                      kind: "림어택", author: "두현71", date: "20260418", game: 3 },
+  { seq: 4,  url: "https://youtu.be/fN-d5JqDkIY?t=99",  p1: "두현", p2: "",     title: "링에다 패스",                          kind: "Funny",  author: "두현71", date: "20260418", game: 3 },
+  { seq: 5,  url: "https://youtu.be/fN-d5JqDkIY?t=165", p1: "두현", p2: "",     title: "뛰다가 갑자기 고관절 재발",            kind: "기타",   author: "두현71", date: "20260418", game: 3 },
+  { seq: 6,  url: "https://youtu.be/fN-d5JqDkIY?t=240", p1: "두현", p2: "효열", title: "골은 실패했지만 아쉬운 패스",          kind: "기타",   author: "두현71", date: "20260418", game: 3 },
+  { seq: 7,  url: "https://youtu.be/fN-d5JqDkIY?t=294", p1: "종민", p2: "",     title: "왼쪽에서 나이스 플로터 뱅크슛",        kind: "속공",   author: "두현71", date: "20260418", game: 3 },
+  { seq: 8,  url: "https://youtu.be/fN-d5JqDkIY?t=322", p1: "충환", p2: "성욱", title: "왼쪽 중거리슛",                        kind: "미들슛", author: "두현71", date: "20260418", game: 3 },
+  { seq: 9,  url: "https://youtu.be/fN-d5JqDkIY?t=393", p1: "충환", p2: "성욱", title: "알까기",                               kind: "Funny",  author: "두현71", date: "20260418", game: 3 },
+  { seq: 10, url: "https://youtu.be/fN-d5JqDkIY?t=420", p1: "충환", p2: "종민", title: "우측 미들슛",                          kind: "미들슛", author: "두현71", date: "20260418", game: 3 },
+  { seq: 11, url: "https://youtu.be/fN-d5JqDkIY?t=452", p1: "성욱", p2: "종민", title: "나이스 컷인 그러나",                   kind: "Funny",  author: "두현71", date: "20260418", game: 3 },
+  { seq: 12, url: "https://youtu.be/fN-d5JqDkIY?t=470", p1: "성현", p2: "성욱", title: "농구코트에서 야구를",                  kind: "Funny",  author: "두현71", date: "20260418", game: 3 },
+  { seq: 13, url: "https://youtu.be/fN-d5JqDkIY?t=573", p1: "충환", p2: "",     title: "왼쪽 골밑 기름손",                     kind: "Funny",  author: "두현71", date: "20260418", game: 3 },
+  { seq: 14, url: "https://youtu.be/fN-d5JqDkIY?t=582", p1: "광준", p2: "두현", title: "속공패스 받아서 페이크후 골밑슛",       kind: "속공",   author: "두현71", date: "20260418", game: 3 },
+  { seq: 15, url: "https://youtu.be/fN-d5JqDkIY?t=596", p1: "두현", p2: "종민", title: "나를 들었다놨다하는",                  kind: "Funny",  author: "두현71", date: "20260418", game: 3 },
+  { seq: 16, url: "https://youtu.be/fN-d5JqDkIY?t=604", p1: "성욱", p2: "",     title: "반박자 빠른 슛",                       kind: "미들슛", author: "두현71", date: "20260418", game: 3 },
+  { seq: 17, url: "https://youtu.be/-oGY3wPWXdo?t=584", p1: "동율", p2: "",     title: "동율 개그 으랏차차",                   kind: "Funny",  author: "두현71", date: "20260418", game: 11 },
+  { seq: 18, url: "https://youtu.be/0K6eWqpduYo?t=153", p1: "원목", p2: "재민", title: "센터의 3점슛",                         kind: "3점",    author: "두현71", date: "20260418", game: 9 },
+];
+
+const fmtDate = d => `${d.slice(0,4)}/${d.slice(4,6)}/${d.slice(6,8)}`;
+const kindClass = k => k.replace(/[^가-힣A-Za-z0-9]/g, '');
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const ytLabel = url => {
+  const m = url.match(/\?t=(\d+)/);
+  if (!m) return "열기";
+  const s = +m[1];
+  const mm = Math.floor(s/60), ss = s % 60;
+  return `${mm}:${String(ss).padStart(2,'0')}`;
+};
+
+const linkCell = url => `<a class="yt" href="${esc(url)}" target="_blank" rel="noopener">${ytLabel(url)}</a>`;
+const kindCell = k => `<span class="kind ${kindClass(k)}">${esc(k)}</span>`;
+
+document.getElementById('total').textContent = clips.length;
+
+// ========== 게임별 뷰 (경기일이 맨앞 = 섹션 헤더) ==========
+const byGame = {};
+for (const c of clips) {
+  const key = `${c.date}_${String(c.game).padStart(2,'0')}`;
+  (byGame[key] ||= { date: c.date, game: c.game, rows: [] }).rows.push(c);
+}
+const gameKeys = Object.keys(byGame).sort();
+
+const gameHtml = gameKeys.map(k => {
+  const g = byGame[k];
+  g.rows.sort((a,b) => a.seq - b.seq);
+  const rows = g.rows.map(c => `
+    <tr>
+      <td>${linkCell(c.url)}</td>
+      <td class="player">${esc(c.p1)}</td>
+      <td class="player2">${c.p2 ? esc(c.p2) : '<span class="empty">-</span>'}</td>
+      <td class="title-cell">${esc(c.title)}</td>
+      <td>${kindCell(c.kind)}</td>
+      <td class="author">${esc(c.author)}</td>
+    </tr>
+  `).join('');
+  return `
+    <section class="group">
+      <h2>${fmtDate(g.date)} &nbsp;·&nbsp; GAME ${g.game}<span class="count">${g.rows.length}개</span></h2>
+      <table>
+        <thead><tr>
+          <th style="width:100px">영상</th>
+          <th style="width:90px">Player 1</th>
+          <th style="width:90px">Player 2</th>
+          <th>제목</th>
+          <th style="width:110px">영상타입</th>
+          <th style="width:100px">작성자</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </section>
+  `;
+}).join('');
+document.getElementById('by-game').innerHTML = gameHtml;
+
+// ========== 개인별 뷰 (Player 1 기준, 경기일이 맨앞 컬럼) ==========
+const byPlayer = {};
+for (const c of clips) {
+  (byPlayer[c.p1] ||= []).push(c);
+}
+const playerKeys = Object.keys(byPlayer).sort((a,b) => a.localeCompare(b, 'ko'));
+
+const playerHtml = playerKeys.map(name => {
+  const list = byPlayer[name].slice().sort((a,b) => (a.date+a.game).localeCompare(b.date+b.game) || a.seq - b.seq);
+  const rows = list.map(c => `
+    <tr>
+      <td class="date-cell">${fmtDate(c.date)} G${c.game}</td>
+      <td>${linkCell(c.url)}</td>
+      <td class="player2">${c.p2 ? esc(c.p2) : '<span class="empty">-</span>'}</td>
+      <td class="title-cell">${esc(c.title)}</td>
+      <td>${kindCell(c.kind)}</td>
+      <td class="author">${esc(c.author)}</td>
+    </tr>
+  `).join('');
+  return `
+    <section class="group">
+      <h2>${esc(name)}<span class="count">${list.length}개</span></h2>
+      <table>
+        <thead><tr>
+          <th style="width:150px">경기</th>
+          <th style="width:100px">영상</th>
+          <th style="width:90px">Player 2</th>
+          <th>제목</th>
+          <th style="width:110px">영상타입</th>
+          <th style="width:100px">작성자</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </section>
+  `;
+}).join('');
+document.getElementById('by-player').innerHTML = playerHtml;
+
+// ========== 탭 전환 ==========
+document.querySelectorAll('nav.tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('active', b === btn));
+    const target = btn.dataset.view;
+    document.querySelectorAll('main .view').forEach(v => v.classList.toggle('active', v.id === target));
+  });
+});
+</script>
+</body>
+</html>
