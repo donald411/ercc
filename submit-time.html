@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ERCC 클립 등록</title>
+<title>ERCC 클립 등록 (분초 직접입력)</title>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>
   :root {
@@ -91,9 +91,6 @@
     color: #fff;
     border-color: var(--accent);
   }
-  @media (max-width: 700px) {
-    nav.form-tabs .tab { padding: 8px 12px; font-size: 13px; flex: 1; text-align: center; }
-  }
   main { padding: 24px; max-width: 720px; margin: 0 auto; }
   .card {
     background: var(--card);
@@ -122,9 +119,6 @@
     color: var(--muted);
     font-size: 13px;
     margin-top: 4px;
-  }
-  @media (max-width: 700px) {
-    .field label .inline-hint { display: block; margin: 2px 0 0; }
   }
   .field input, .field select, .field textarea {
     width: 100%;
@@ -180,19 +174,21 @@
     header h1 { font-size: 26px; }
     .card { padding: 20px; }
     .row2 { grid-template-columns: 1fr; }
+    nav.form-tabs .tab { padding: 8px 12px; font-size: 13px; flex: 1; text-align: center; }
+    .field label .inline-hint { display: block; margin: 2px 0 0; }
   }
 </style>
 </head>
 <body>
 <header>
   <h1>
-    <span><span class="tag">ERCC</span>클립 등록 (Timecode 복붙)</span>
+    <span><span class="tag">ERCC</span>클립 등록 (분초 직접입력)</span>
     <a class="back-btn" href="index.html">← 목록으로</a>
   </h1>
   <div class="meta">유튜브 영상의 구간·선수·제목을 입력하면 클립 목록에 자동 추가됩니다.</div>
   <nav class="form-tabs">
-    <a class="tab active" href="submit.html">Timecode 복붙</a>
-    <a class="tab" href="submit-time.html">분초 직접입력</a>
+    <a class="tab" href="submit.html">Timecode 복붙</a>
+    <a class="tab active" href="submit-time.html">분초 직접입력</a>
   </nav>
 </header>
 
@@ -240,15 +236,22 @@
       </div>
 
       <div class="field">
-        <label>시작 시점 유튜브 URL<span class="req">*</span></label>
-        <input name="start_url" required type="url" placeholder="https://youtu.be/XXXX?t=53" pattern="https?://youtu\.be/[^?]+\?t=\d+.*">
-        <div class="hint">유튜브에서 시작 지점 우클릭 → "현재 시간에 동영상 URL 복사"</div>
+        <label>유튜브 영상 URL<span class="req">*</span></label>
+        <input name="video_url" required type="url" placeholder="https://youtu.be/XXXXX 또는 https://www.youtube.com/watch?v=XXXXX">
+        <div class="hint">시작 시간 표시(`?t=`) 없는 기본 URL. 짧은 링크/긴 링크/Shorts URL 모두 지원</div>
       </div>
 
-      <div class="field">
-        <label>종료 시점 유튜브 URL<span class="req">*</span></label>
-        <input name="end_url" required type="url" placeholder="https://youtu.be/XXXX?t=58" pattern="https?://youtu\.be/[^?]+\?t=\d+.*">
-        <div class="hint">같은 영상의 종료 지점 URL. 시작 URL 과 영상ID가 일치해야 함.</div>
+      <div class="row2">
+        <div class="field">
+          <label>시작 시점<span class="req">*</span></label>
+          <input name="start_time" required placeholder="예: 1:23" autocomplete="off">
+          <div class="hint">분:초 또는 시:분:초 (예: <code>5:23</code>, <code>1:05:30</code>)</div>
+        </div>
+        <div class="field">
+          <label>종료 시점<span class="req">*</span></label>
+          <input name="end_time" required placeholder="예: 1:30" autocomplete="off">
+          <div class="hint">시작보다 뒤, 차이 5분 이내</div>
+        </div>
       </div>
 
       <div id="turnstile-widget" style="margin-bottom: 12px;"></div>
@@ -263,7 +266,7 @@
 
 <script>
 // ============================================================
-// ERCC submit form: Turnstile + Edge Function 경유 INSERT
+// ERCC submit form (분초 입력 방식): Turnstile + Edge Function
 // ============================================================
 
 const SUPABASE_URL       = 'https://wfwzxnyelpbgjxlovjgo.supabase.co';
@@ -282,16 +285,36 @@ function showAlert(type, msg) {
   alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function extractVid(url) {
-  const m = (url || '').match(/youtu\.be\/([^?]+)/);
-  return m ? m[1] : null;
-}
-function extractSec(url) {
-  const m = (url || '').match(/[?&]t=(\d+)/);
-  return m ? parseInt(m[1], 10) : null;
+// 다양한 유튜브 URL 형식에서 video ID 추출
+function extractVideoId(url) {
+  if (!url) return null;
+  const patterns = [
+    /youtu\.be\/([^?&/]+)/,                       // youtu.be/XXX
+    /youtube\.com\/watch\?[^#]*v=([^&]+)/,        // youtube.com/watch?v=XXX
+    /youtube\.com\/shorts\/([^?&/]+)/,            // youtube.com/shorts/XXX
+    /youtube\.com\/embed\/([^?&/]+)/,             // youtube.com/embed/XXX
+    /youtube\.com\/v\/([^?&/]+)/,                 // youtube.com/v/XXX
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) return m[1];
+  }
+  return null;
 }
 
-// ===== Turnstile 위젯 등록 =====
+// "5:23" 또는 "1:05:30" 또는 "323" 같은 형식 → 초로 변환
+function parseTime(str) {
+  if (!str) return null;
+  const trimmed = String(str).trim();
+  if (!/^\d+(:\d+)*$/.test(trimmed)) return null;
+  const parts = trimmed.split(':').map(p => parseInt(p, 10));
+  if (parts.length === 1) return parts[0];                              // SS
+  if (parts.length === 2) return parts[0] * 60 + parts[1];              // MM:SS
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]; // HH:MM:SS
+  return null;
+}
+
+// ===== Turnstile =====
 let widgetId = null;
 let pendingTokenResolve = null;
 
@@ -343,7 +366,6 @@ async function getTurnstileToken() {
     pendingTokenResolve = resolve;
     turnstile.reset(widgetId);
     turnstile.execute(widgetId);
-    // 30초 안에 응답 없으면 timeout
     setTimeout(() => {
       if (pendingTokenResolve === resolve) {
         pendingTokenResolve = null;
@@ -363,26 +385,26 @@ form.addEventListener('submit', async e => {
   const data = Object.fromEntries(new FormData(form));
   data.player2 = (data.player2 || '').trim() || null;
 
-  // 클라이언트 검증
-  const sVid = extractVid(data.start_url);
-  const eVid = extractVid(data.end_url);
-  const sSec = extractSec(data.start_url);
-  const eSec = extractSec(data.end_url);
+  // Video ID 추출
+  const vid = extractVideoId(data.video_url);
+  if (!vid) {
+    showAlert('error', '유튜브 영상 URL 에서 영상 ID를 인식하지 못했습니다.');
+    return;
+  }
 
-  if (!sVid || !eVid) {
-    showAlert('error', 'URL에서 영상 ID를 찾을 수 없습니다. youtu.be/XXXX?t=N 형식이어야 합니다.');
+  // 시작/종료 시간 파싱
+  const sSec = parseTime(data.start_time);
+  const eSec = parseTime(data.end_time);
+  if (sSec == null) {
+    showAlert('error', '시작 시점 형식이 잘못됐습니다. 예: 1:23');
     return;
   }
-  if (sVid !== eVid) {
-    showAlert('error', `시작과 종료 URL의 영상 ID가 다릅니다. (${sVid} ≠ ${eVid})`);
-    return;
-  }
-  if (sSec == null || eSec == null) {
-    showAlert('error', 'URL에 ?t=초 파라미터가 있어야 합니다.');
+  if (eSec == null) {
+    showAlert('error', '종료 시점 형식이 잘못됐습니다. 예: 1:30');
     return;
   }
   if (sSec >= eSec) {
-    showAlert('error', `종료 시점(${eSec}s)이 시작 시점(${sSec}s)보다 뒤여야 합니다.`);
+    showAlert('error', `종료(${eSec}s)가 시작(${sSec}s)보다 뒤여야 합니다.`);
     return;
   }
   if (eSec - sSec > 300) {
@@ -390,10 +412,13 @@ form.addEventListener('submit', async e => {
     return;
   }
 
+  // start_url, end_url 구성 (Edge Function 이 기대하는 youtu.be/XXX?t=N 형식)
+  const startUrl = `https://youtu.be/${vid}?t=${sSec}`;
+  const endUrl   = `https://youtu.be/${vid}?t=${eSec}`;
+
   btn.disabled = true;
   btn.textContent = '검증 중...';
 
-  // Turnstile 토큰 받기
   const token = await getTurnstileToken();
   if (!token) {
     btn.disabled = false;
@@ -404,7 +429,6 @@ form.addEventListener('submit', async e => {
 
   btn.textContent = '등록 중...';
 
-  // Edge Function 호출
   let res, body;
   try {
     res = await fetch(EDGE_URL, {
@@ -417,8 +441,8 @@ form.addEventListener('submit', async e => {
       body: JSON.stringify({
         token,
         payload: {
-          start_url: data.start_url,
-          end_url:   data.end_url,
+          start_url: startUrl,
+          end_url:   endUrl,
           player1:   data.player1.trim(),
           player2:   data.player2,
           title:     data.title.trim(),

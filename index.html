@@ -173,6 +173,10 @@
   .kind.미들슛 { background: #e8f0fe; color: #1967d2; }
   .kind.3점 { background: #f3e8fd; color: #8430ce; }
   .kind.림어택 { background: #fef0e3; color: #e8710a; }
+  .kind.드라이빈 { background: #fce4ec; color: #c2185b; }
+  .kind.굿패스 { background: #e8eaf6; color: #3f51b5; }
+  .kind.스틸 { background: #fde7e9; color: #c5221f; }
+  .kind.슛블록 { background: #e0f2f1; color: #00695c; }
   .kind.Funny { background: #fef7e0; color: #c99a00; }
   .kind.기타 { background: #eceff1; color: #546e7a; }
   .player {
@@ -312,6 +316,15 @@
 
     /* 작성자 작게 */
     table td.cell-author { font-size: 13px; color: var(--muted); }
+
+    /* 영상타입별 뷰 모바일 카드: kind 셀이 없으므로 video 가 그 자리까지 차지 */
+    #by-kind table tr {
+      grid-template-areas:
+        "date video video"
+        "p1 p1 p2"
+        "title title title"
+        "author author author";
+    }
   }
 </style>
 </head>
@@ -325,6 +338,7 @@
   <nav class="tabs">
     <button data-view="by-game" class="active">게임별</button>
     <button data-view="by-player">개인별 (선수 1)</button>
+    <button data-view="by-kind">영상타입별</button>
   </nav>
 </header>
 
@@ -332,10 +346,11 @@
   <div id="status">클립 로딩 중...</div>
   <div id="by-game" class="view active" hidden></div>
   <div id="by-player" class="view" hidden></div>
+  <div id="by-kind" class="view" hidden></div>
 </main>
 
 <footer>
-  Powered by Supabase · <a href="submit.html">클립 등록하기</a>
+  Powered by DH An · <a href="submit.html">클립 등록하기</a>
 </footer>
 
 <script type="module">
@@ -366,7 +381,7 @@ async function loadClips() {
   const statusEl = document.getElementById('status');
   const { data, error } = await supabase
     .from('ercc_clips')
-    .select('id, start_url, end_url, player1, player2, title, kind, author, game_date, game_num')
+    .select('id, start_url, end_url, player1, player2, title, kind, author, game_date, game_num, start_sec')
     .order('game_date', { ascending: true, nullsFirst: false })
     .order('game_num',  { ascending: true, nullsFirst: false })
     .order('id',        { ascending: true });
@@ -386,7 +401,8 @@ async function loadClips() {
     kind: r.kind,
     author: r.author,
     date: r.game_date || "미분류",
-    game: r.game_num ?? '?'
+    game: r.game_num ?? '?',
+    startSec: r.start_sec ?? 0
   }));
 
   document.getElementById('total').textContent = clips.length;
@@ -400,20 +416,50 @@ async function loadClips() {
   statusEl.hidden = true;
   document.getElementById('by-game').hidden = false;
   document.getElementById('by-player').hidden = false;
+  document.getElementById('by-kind').hidden = false;
 }
 
+// 영상타입별 우선 노출 순서 (나머지는 ko 가나다순)
+const KIND_PRIORITY = ['Funny', '3점'];
+
+const cmpDateDesc = (a, b) => String(b.date).localeCompare(String(a.date));
+const cmpGameDesc = (a, b) => Number(b.game) - Number(a.game);
+const cmpTimeAsc  = (a, b) => Number(a.startSec) - Number(b.startSec);
+const cmpTimeDesc = (a, b) => Number(b.startSec) - Number(a.startSec);
+
+// 게임별 섹션 내부 정렬: 시간 ASC
+const sortInGame = cmpTimeAsc;
+
+// 개인별 섹션 내부: 날짜 DESC → 게임 DESC → 시간 ASC
+const sortInPlayer = (a, b) => {
+  let r = cmpDateDesc(a, b); if (r !== 0) return r;
+  r = cmpGameDesc(a, b);     if (r !== 0) return r;
+  return cmpTimeAsc(a, b);
+};
+
+// 영상타입별 섹션 내부: 날짜 DESC → 게임 DESC → 시간 DESC
+const sortInKind = (a, b) => {
+  let r = cmpDateDesc(a, b); if (r !== 0) return r;
+  r = cmpGameDesc(a, b);     if (r !== 0) return r;
+  return cmpTimeDesc(a, b);
+};
+
 function render(clips) {
-  // ========== 게임별 뷰 ==========
+  // ========== 게임별 뷰 (섹션: 날짜 DESC + 게임 DESC, 섹션 내부: 시간 ASC) ==========
   const byGame = {};
   for (const c of clips) {
     const key = `${c.date}_${String(c.game).padStart(2,'0')}`;
     (byGame[key] ||= { date: c.date, game: c.game, rows: [] }).rows.push(c);
   }
-  const gameKeys = Object.keys(byGame).sort();
+  const gameKeys = Object.keys(byGame).sort((a, b) => {
+    const ga = byGame[a], gb = byGame[b];
+    let r = cmpDateDesc(ga, gb); if (r !== 0) return r;
+    return cmpGameDesc(ga, gb);
+  });
 
   const gameHtml = gameKeys.map(k => {
     const g = byGame[k];
-    g.rows.sort((a,b) => a.seq - b.seq);
+    g.rows.sort(sortInGame);
     const rows = g.rows.map(c => `
       <tr>
         <td class="cell-date cell-date-mobile-only"><span class="date-chip-mobile">${shortDate(c.date)} #${c.game}</span></td>
@@ -452,7 +498,7 @@ function render(clips) {
   const playerKeys = Object.keys(byPlayer).sort((a,b) => a.localeCompare(b, 'ko'));
 
   const playerHtml = playerKeys.map(name => {
-    const list = byPlayer[name].slice().sort((a,b) => (a.date+a.game).localeCompare(b.date+b.game) || a.seq - b.seq);
+    const list = byPlayer[name].slice().sort(sortInPlayer);
     const rows = list.map(c => `
       <tr>
         <td class="cell-date" data-label="경기"><span class="date-cell">${fmtDate(c.date)} G${c.game}</span><span class="date-chip-mobile">${shortDate(c.date)} #${c.game}</span></td>
@@ -481,6 +527,51 @@ function render(clips) {
     `;
   }).join('');
   document.getElementById('by-player').innerHTML = playerHtml;
+
+  // ========== 영상타입별 뷰 (KIND_ORDER 순, 섹션 내부 날짜 DESC) ==========
+  const byKind = {};
+  for (const c of clips) {
+    (byKind[c.kind] ||= []).push(c);
+  }
+  const kindKeys = Object.keys(byKind).sort((a, b) => {
+    const ai = KIND_PRIORITY.indexOf(a);
+    const bi = KIND_PRIORITY.indexOf(b);
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    return a.localeCompare(b, 'ko');
+  });
+
+  const kindHtml = kindKeys.map(kind => {
+    const list = byKind[kind].slice().sort(sortInKind);
+    const rows = list.map(c => `
+      <tr>
+        <td class="cell-date" data-label="경기"><span class="date-cell">${fmtDate(c.date)} G${c.game}</span><span class="date-chip-mobile">${shortDate(c.date)} #${c.game}</span></td>
+        <td class="cell-video" data-label="영상">${linkCell(c.url)}</td>
+        <td class="cell-p1" data-label="선수1"><span class="player">${esc(c.p1)}</span></td>
+        <td class="player2" data-label="선수2">${c.p2 ? esc(c.p2) : '<span class="empty">-</span>'}</td>
+        <td class="title-cell" data-label="제목">${esc(c.title)}</td>
+        <td class="author cell-author" data-label="작성자">${esc(c.author)}</td>
+      </tr>
+    `).join('');
+    return `
+      <section class="group">
+        <h2><span class="kind ${kindClass(kind)}" style="font-size:16px; padding:4px 14px; vertical-align: 2px;">${esc(kind)}</span><span class="count">${list.length}개</span></h2>
+        <table>
+          <thead><tr>
+            <th style="width:150px">경기</th>
+            <th style="width:100px">영상</th>
+            <th style="width:90px">선수 1</th>
+            <th style="width:90px">선수 2</th>
+            <th>제목</th>
+            <th style="width:100px">작성자</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </section>
+    `;
+  }).join('');
+  document.getElementById('by-kind').innerHTML = kindHtml;
 }
 
 // ========== 탭 전환 ==========
