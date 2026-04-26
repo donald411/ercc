@@ -268,6 +268,8 @@
     line-height: 1.65;
     margin-bottom: 18px;
     text-align: center;
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
   #auth-modal .modal-notice p { margin: 8px 0; }
   #auth-modal .modal-notice .lead { font-weight: 600; }
@@ -289,6 +291,8 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     background: #fafbfc;
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
   .footer-notice p { margin: 4px 0; }
   .footer-notice .lead { font-weight: 600; color: var(--text); }
@@ -416,7 +420,7 @@
         <div class="field">
           <label>종료 시점<span class="req">*</span></label>
           <input name="end_time" required placeholder="예: 1:30" autocomplete="off">
-          <div class="hint">시작보다 뒤, 차이 5분 이내</div>
+          <div class="hint">시작보다 뒤, 차이 30초 이내</div>
         </div>
       </div>
 
@@ -701,8 +705,8 @@ form.addEventListener('submit', async e => {
     showAlert('error', `종료(${eSec}s)가 시작(${sSec}s)보다 뒤여야 합니다.`);
     return;
   }
-  if (eSec - sSec > 300) {
-    showAlert('error', '클립 길이가 5분을 초과합니다. 구간을 줄여주세요.');
+  if (eSec - sSec > 30) {
+    showAlert('error', '클립 길이가 30초를 초과합니다. 구간을 줄여주세요.');
     return;
   }
 
