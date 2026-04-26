@@ -288,6 +288,14 @@
     min-height: 20px;
     font-weight: 600;
   }
+  #auth-modal .modal-notice {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.65;
+    margin-bottom: 18px;
+  }
+  #auth-modal .modal-notice p { margin: 8px 0; }
+  #auth-modal .modal-notice .lead { font-weight: 600; }
   .auth-pill {
     display: inline-flex;
     align-items: center;
@@ -309,6 +317,25 @@
     padding: 0;
   }
   .auth-pill .logout-btn:hover { text-decoration: underline; }
+
+  /* ===== 푸터 안내문 ===== */
+  .footer-notice {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.65;
+    text-align: left;
+    max-width: 720px;
+    margin: 0 auto 16px;
+    padding: 14px 18px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fafbfc;
+  }
+  .footer-notice p { margin: 4px 0; }
+  .footer-notice .lead { font-weight: 600; color: var(--text); }
+  @media (max-width: 700px) {
+    .footer-notice { font-size: 11px; padding: 10px 12px; }
+  }
 
   @media (max-width: 700px) {
     body { font-size: 16px; }
@@ -427,11 +454,23 @@
 
 <div id="auth-modal" class="hidden">
   <div class="modal-card">
-    <h2><span class="tag">ERCC</span>멤버 인증</h2>
-    <div class="modal-hint">등록된 ID 를 입력하세요.<br>형식: 이름+생년 (예: <b>조던63</b>)</div>
-    <input id="auth-input" type="text" autocomplete="off" spellcheck="false" placeholder="이름+생년">
-    <button type="button" class="modal-submit" id="auth-submit">확인</button>
-    <div class="err" id="auth-err"></div>
+    <div id="auth-step-input">
+      <h2><span class="tag">ERCC</span>멤버 인증</h2>
+      <div class="modal-hint">등록된 ID 를 입력하세요.<br>형식: 이름+생년 (예: <b>조던63</b>)</div>
+      <input id="auth-input" type="text" autocomplete="off" spellcheck="false" placeholder="이름+생년">
+      <button type="button" class="modal-submit" id="auth-submit">확인</button>
+      <div class="err" id="auth-err"></div>
+    </div>
+    <div id="auth-step-notice" hidden>
+      <h2><span class="tag">ERCC</span><span id="notice-greeting">환영합니다</span></h2>
+      <div class="modal-notice">
+        <p class="lead">🏀 몇십년 후에도 다시 찾아볼 수 있는 우리들의 영상앨범을 위해 자발적인 클립 등록 부탁드립니다.</p>
+        <p>🎬 누가봐도 멋있는 영상도 좋지만 수십년 후에도 추억할만한 내모습을 올려주세요.</p>
+        <p>🈚 저희 채널은 수익화와는 무관합니다.<br>수익화 조건이 충족될 가능성도 거의 0%이고, 조건을 충족한다 하더라도 채널의 취지와 맞게 비수익채널로 유지될 것입니다.</p>
+        <p>비수익으로 운영되는 만큼 멤버들의 자발적 노력으로 유지된다는 점, 응원하는 마음으로 봐주시면 감사하겠습니다.</p>
+      </div>
+      <button type="button" class="modal-submit" id="notice-ok">확인</button>
+    </div>
   </div>
 </div>
 
@@ -462,6 +501,12 @@
 </main>
 
 <footer>
+  <div class="footer-notice">
+    <p class="lead">🏀 몇십년 후에도 다시 찾아볼 수 있는 우리들의 영상앨범을 위해 자발적인 클립 등록 부탁드립니다.</p>
+    <p>🎬 누가봐도 멋있는 영상도 좋지만 수십년 후에도 추억할만한 내모습을 올려주세요.</p>
+    <p>🈚 저희 채널은 수익화와는 무관합니다. 수익화 조건이 충족될 가능성도 거의 0%이고, 조건을 충족한다 하더라도 채널의 취지와 맞게 비수익채널로 유지될 것입니다.</p>
+    <p>비수익으로 운영되는 만큼 멤버들의 자발적 노력으로 유지된다는 점, 응원하는 마음으로 봐주시면 감사하겠습니다.</p>
+  </div>
   Powered by DH An · <a href="submit.html">클립 등록하기</a>
 </footer>
 
@@ -697,7 +742,7 @@ document.querySelectorAll('nav.tabs button').forEach(btn => {
 
 // ========== 멤버 인증 게이트 ==========
 const AUTH_KEY   = 'ercc_auth_member';
-const SESSION_MS = 3 * 24 * 60 * 60 * 1000; // 슬라이딩 3일
+const SESSION_MS = 1 * 24 * 60 * 60 * 1000; // 슬라이딩 1일
 
 function readAuth() {
   const raw = localStorage.getItem(AUTH_KEY);
@@ -736,13 +781,32 @@ async function verifyMember(id) {
   return !!data;
 }
 
-function showAuthModal() {
-  authModal.classList.remove('hidden');
+const stepInput  = document.getElementById('auth-step-input');
+const stepNotice = document.getElementById('auth-step-notice');
+const noticeGreet = document.getElementById('notice-greeting');
+
+function showStepInput() {
+  stepInput.hidden = false;
+  stepNotice.hidden = true;
   authInput.value = '';
   authErr.textContent = '';
   setTimeout(() => authInput.focus(), 50);
 }
+function showStepNotice(id) {
+  stepInput.hidden = true;
+  stepNotice.hidden = false;
+  noticeGreet.textContent = `환영합니다, ${id} 님`;
+}
+function showAuthModal() {
+  authModal.classList.remove('hidden');
+  showStepInput();
+}
 function hideAuthModal() { authModal.classList.add('hidden'); }
+
+document.getElementById('notice-ok').addEventListener('click', () => {
+  hideAuthModal();
+  showStepInput(); // 다음 로그아웃 시를 위해 입력 화면 복원
+});
 
 function setAuthUI(id) {
   authIdEl.textContent = id;
@@ -754,7 +818,7 @@ async function tryAuth(id) {
   if (!ok) return false;
   saveAuth(id);
   setAuthUI(id);
-  hideAuthModal();
+  showStepNotice(id);
   if (!clipsLoaded) { clipsLoaded = true; loadClips(); }
   return true;
 }
