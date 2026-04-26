@@ -168,6 +168,106 @@
   }
   .alert.success { background: #e6f4ea; color: var(--success); border: 1px solid #81c995; }
   .alert.error { background: #fce8e6; color: var(--error); border: 1px solid #f28b82; }
+  .auth-status {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+  }
+  .auth-badge {
+    background: #e6f4ea;
+    color: var(--success);
+    padding: 4px 10px;
+    border-radius: 14px;
+    font-weight: 700;
+  }
+  .auth-change-link {
+    color: var(--link);
+    text-decoration: none;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .auth-change-link:hover { text-decoration: underline; }
+  .field input[readonly] {
+    background: #f5f7fa;
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+
+  /* ===== 인증 모달 ===== */
+  #auth-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 20, 30, 0.55);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(2px);
+  }
+  #auth-modal.hidden { display: none; }
+  #auth-modal .modal-card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 32px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  }
+  #auth-modal h2 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #auth-modal h2 .tag {
+    background: var(--accent);
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  #auth-modal .modal-hint {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  #auth-modal input {
+    width: 100%;
+    font: inherit;
+    padding: 12px 14px;
+    border: 2px solid var(--border-strong);
+    border-radius: 8px;
+    font-size: 17px;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+  }
+  #auth-modal input:focus { outline: none; border-color: var(--accent); }
+  #auth-modal button.modal-submit {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  #auth-modal button.modal-submit:hover:not(:disabled) { background: #e85d00; }
+  #auth-modal button.modal-submit:disabled { background: #c4c9d1; cursor: not-allowed; }
+  #auth-modal .err {
+    color: #d93025;
+    margin-top: 10px;
+    font-size: 14px;
+    min-height: 20px;
+    font-weight: 600;
+  }
   footer {
     text-align: center;
     padding: 28px 20px;
@@ -184,6 +284,17 @@
 </style>
 </head>
 <body>
+
+<div id="auth-modal" class="hidden">
+  <div class="modal-card">
+    <h2><span class="tag">ERCC</span>멤버 인증</h2>
+    <div class="modal-hint">등록된 ID 를 입력하세요.<br>형식: 이름+생년 (예: <b>조던63</b>)</div>
+    <input id="auth-input" type="text" autocomplete="off" spellcheck="false" placeholder="이름+생년">
+    <button type="button" class="modal-submit" id="auth-submit">확인</button>
+    <div class="err" id="auth-err"></div>
+  </div>
+</div>
+
 <header>
   <h1>
     <span><span class="tag">ERCC</span>클립 등록 (Timecode 복붙)</span>
@@ -196,13 +307,17 @@
   </nav>
 </header>
 
-<main>
+<main id="main" hidden>
   <div class="card">
     <div id="alert" class="alert" hidden></div>
     <form id="f">
       <div class="field">
-        <label>작성자<span class="req">*</span> <span class="inline-hint">이름과 생년을 (ex. 조던63) 정확히 입력하세요 (인증대체)</span></label>
-        <input name="author" required autocomplete="off" spellcheck="false">
+        <label>작성자<span class="req">*</span> <span class="inline-hint">이름과 생년 (ex. 조던63). 멤버 등록 ID여야 합니다</span></label>
+        <input name="author" required autocomplete="off" spellcheck="false" placeholder="예: 조던63">
+        <div id="auth-status" class="auth-status" hidden>
+          <span class="auth-badge" id="auth-badge">🔓 인증됨</span>
+          <a href="#" class="auth-change-link" id="auth-change">로그아웃</a>
+        </div>
       </div>
 
       <div class="row2">
@@ -274,6 +389,111 @@ const EDGE_URL           = `${SUPABASE_URL}/functions/v1/submit-clip`;
 const form    = document.getElementById('f');
 const btn     = document.getElementById('submit-btn');
 const alertEl = document.getElementById('alert');
+
+// ===== 멤버 인증 =====
+const AUTH_KEY     = 'ercc_auth_member';
+const SESSION_MS   = 3 * 24 * 60 * 60 * 1000; // 슬라이딩 3일
+
+function readAuth() {
+  const raw = localStorage.getItem(AUTH_KEY);
+  if (!raw) return null;
+  // 구포맷(plain string) 호환: 발견되면 신포맷으로 마이그레이션
+  if (!raw.startsWith('{')) { saveAuth(raw); return raw; }
+  try {
+    const obj = JSON.parse(raw);
+    if (!obj.id || !obj.exp || Date.now() > obj.exp) {
+      localStorage.removeItem(AUTH_KEY);
+      return null;
+    }
+    return obj.id;
+  } catch {
+    localStorage.removeItem(AUTH_KEY);
+    return null;
+  }
+}
+function saveAuth(id) {
+  localStorage.setItem(AUTH_KEY, JSON.stringify({ id, exp: Date.now() + SESSION_MS }));
+}
+
+const authInput   = form.querySelector('[name="author"]');
+const authStatus  = document.getElementById('auth-status');
+const authBadge   = document.getElementById('auth-badge');
+const authChange  = document.getElementById('auth-change');
+
+const mainEl       = document.getElementById('main');
+const authModal    = document.getElementById('auth-modal');
+const modalInput   = document.getElementById('auth-input');
+const modalBtn     = document.getElementById('auth-submit');
+const modalErr     = document.getElementById('auth-err');
+
+function applyAuth(id) {
+  authInput.value = id;
+  authInput.readOnly = true;
+  authStatus.hidden = false;
+  authBadge.textContent = `🔓 ${id} 인증됨`;
+}
+function clearAuth() {
+  localStorage.removeItem(AUTH_KEY);
+  authInput.value = '';
+  authInput.readOnly = false;
+  authStatus.hidden = true;
+  showAuthModal();
+}
+
+async function verifyMember(id) {
+  const trimmed = (id || '').trim();
+  if (!trimmed) return false;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/members?id=eq.${encodeURIComponent(trimmed)}&select=id`,
+      { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
+    );
+    if (!res.ok) return false;
+    const data = await res.json();
+    return Array.isArray(data) && data.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function showAuthModal() {
+  authModal.classList.remove('hidden');
+  mainEl.hidden = true;
+  modalInput.value = '';
+  modalErr.textContent = '';
+  setTimeout(() => modalInput.focus(), 50);
+}
+function hideAuthModal() {
+  authModal.classList.add('hidden');
+  mainEl.hidden = false;
+}
+
+modalBtn.addEventListener('click', async () => {
+  const id = modalInput.value.trim();
+  if (!id) { modalErr.textContent = 'ID를 입력하세요.'; return; }
+  modalBtn.disabled = true;
+  modalBtn.textContent = '확인 중...';
+  modalErr.textContent = '';
+  const ok = await verifyMember(id);
+  modalBtn.disabled = false;
+  modalBtn.textContent = '확인';
+  if (!ok) { modalErr.textContent = `'${id}' 는 등록된 멤버가 아닙니다.`; return; }
+  saveAuth(id);
+  applyAuth(id);
+  hideAuthModal();
+});
+modalInput.addEventListener('keydown', e => { if (e.key === 'Enter') modalBtn.click(); });
+
+authChange.addEventListener('click', e => { e.preventDefault(); clearAuth(); });
+
+const cachedAuth = readAuth();
+if (cachedAuth) {
+  applyAuth(cachedAuth);
+  saveAuth(cachedAuth); // 슬라이딩 갱신
+  hideAuthModal();
+} else {
+  showAuthModal();
+}
 
 function showAlert(type, msg) {
   alertEl.className = `alert ${type}`;
@@ -390,6 +610,24 @@ form.addEventListener('submit', async e => {
     return;
   }
 
+  // 멤버 인증 검증 (캐시 없을 때만, 모달이 게이트 역할이지만 fallback)
+  const authorTrimmed = (data.author || '').trim();
+  if (!readAuth()) {
+    btn.disabled = true;
+    btn.textContent = '인증 확인 중...';
+    const ok = await verifyMember(authorTrimmed);
+    if (!ok) {
+      btn.disabled = false;
+      btn.textContent = '클립 등록';
+      showAlert('error', `'${authorTrimmed}' 는 등록된 멤버 ID 가 아닙니다. 정확한 ID로 입력해주세요.`);
+      return;
+    }
+    saveAuth(authorTrimmed);
+    applyAuth(authorTrimmed);
+  } else {
+    saveAuth(authorTrimmed); // 활동 시 슬라이딩 갱신
+  }
+
   btn.disabled = true;
   btn.textContent = '검증 중...';
 
@@ -445,6 +683,9 @@ form.addEventListener('submit', async e => {
 
   showAlert('success', '클립이 등록되었습니다. 목록에서 확인하세요.');
   form.reset();
+  // 인증 정보는 reset() 후에도 유지
+  const persisted = readAuth();
+  if (persisted) applyAuth(persisted);
 });
 </script>
 </body>

@@ -215,6 +215,101 @@
   .cell-date-mobile-only { display: none; }
   .date-chip-mobile { display: none; }
 
+  /* ===== 인증 모달 ===== */
+  #auth-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 20, 30, 0.55);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(2px);
+  }
+  #auth-modal.hidden { display: none; }
+  #auth-modal .modal-card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 32px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  }
+  #auth-modal h2 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #auth-modal h2 .tag {
+    background: var(--accent);
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  #auth-modal .modal-hint {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  #auth-modal input {
+    width: 100%;
+    font: inherit;
+    padding: 12px 14px;
+    border: 2px solid var(--border-strong);
+    border-radius: 8px;
+    font-size: 17px;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+  }
+  #auth-modal input:focus { outline: none; border-color: var(--accent); }
+  #auth-modal button.modal-submit {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  #auth-modal button.modal-submit:hover:not(:disabled) { background: #e85d00; }
+  #auth-modal button.modal-submit:disabled { background: #c4c9d1; cursor: not-allowed; }
+  #auth-modal .err {
+    color: #d93025;
+    margin-top: 10px;
+    font-size: 14px;
+    min-height: 20px;
+    font-weight: 600;
+  }
+  .auth-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #e6f4ea;
+    color: #1e8e3e;
+    padding: 6px 12px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .auth-pill .logout-btn {
+    background: transparent;
+    border: none;
+    color: var(--link);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+  }
+  .auth-pill .logout-btn:hover { text-decoration: underline; }
+
   @media (max-width: 700px) {
     body { font-size: 16px; }
     header { padding: 20px 16px 14px; }
@@ -329,10 +424,27 @@
 </style>
 </head>
 <body>
+
+<div id="auth-modal" class="hidden">
+  <div class="modal-card">
+    <h2><span class="tag">ERCC</span>멤버 인증</h2>
+    <div class="modal-hint">등록된 ID 를 입력하세요.<br>형식: 이름+생년 (예: <b>조던63</b>)</div>
+    <input id="auth-input" type="text" autocomplete="off" spellcheck="false" placeholder="이름+생년">
+    <button type="button" class="modal-submit" id="auth-submit">확인</button>
+    <div class="err" id="auth-err"></div>
+  </div>
+</div>
+
 <header>
   <h1>
     <span><span class="tag">ERCC</span>농구 클립 모음</span>
-    <a class="add-btn" href="submit.html">클립 등록</a>
+    <span style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <span class="auth-pill" id="auth-pill" hidden>
+        🔓 <span id="auth-id"></span>
+        <button type="button" class="logout-btn" id="auth-logout">로그아웃</button>
+      </span>
+      <a class="add-btn" href="submit.html">클립 등록</a>
+    </span>
   </h1>
   <div class="meta">으랏차차 농구 · 총 <span id="total">-</span>개 클립</div>
   <nav class="tabs">
@@ -583,7 +695,98 @@ document.querySelectorAll('nav.tabs button').forEach(btn => {
   });
 });
 
-loadClips();
+// ========== 멤버 인증 게이트 ==========
+const AUTH_KEY   = 'ercc_auth_member';
+const SESSION_MS = 3 * 24 * 60 * 60 * 1000; // 슬라이딩 3일
+
+function readAuth() {
+  const raw = localStorage.getItem(AUTH_KEY);
+  if (!raw) return null;
+  if (!raw.startsWith('{')) { saveAuth(raw); return raw; }
+  try {
+    const obj = JSON.parse(raw);
+    if (!obj.id || !obj.exp || Date.now() > obj.exp) {
+      localStorage.removeItem(AUTH_KEY);
+      return null;
+    }
+    return obj.id;
+  } catch {
+    localStorage.removeItem(AUTH_KEY);
+    return null;
+  }
+}
+function saveAuth(id) {
+  localStorage.setItem(AUTH_KEY, JSON.stringify({ id, exp: Date.now() + SESSION_MS }));
+}
+
+const authModal = document.getElementById('auth-modal');
+const authPill  = document.getElementById('auth-pill');
+const authIdEl  = document.getElementById('auth-id');
+const authInput = document.getElementById('auth-input');
+const authBtn   = document.getElementById('auth-submit');
+const authErr   = document.getElementById('auth-err');
+let clipsLoaded = false;
+
+async function verifyMember(id) {
+  const trimmed = (id || '').trim();
+  if (!trimmed) return false;
+  const { data, error } = await supabase
+    .from('members').select('id').eq('id', trimmed).maybeSingle();
+  if (error) { console.error(error); return false; }
+  return !!data;
+}
+
+function showAuthModal() {
+  authModal.classList.remove('hidden');
+  authInput.value = '';
+  authErr.textContent = '';
+  setTimeout(() => authInput.focus(), 50);
+}
+function hideAuthModal() { authModal.classList.add('hidden'); }
+
+function setAuthUI(id) {
+  authIdEl.textContent = id;
+  authPill.hidden = false;
+}
+
+async function tryAuth(id) {
+  const ok = await verifyMember(id);
+  if (!ok) return false;
+  saveAuth(id);
+  setAuthUI(id);
+  hideAuthModal();
+  if (!clipsLoaded) { clipsLoaded = true; loadClips(); }
+  return true;
+}
+
+authBtn.addEventListener('click', async () => {
+  const id = authInput.value.trim();
+  if (!id) { authErr.textContent = 'ID를 입력하세요.'; return; }
+  authBtn.disabled = true;
+  authBtn.textContent = '확인 중...';
+  authErr.textContent = '';
+  const ok = await tryAuth(id);
+  authBtn.disabled = false;
+  authBtn.textContent = '확인';
+  if (!ok) authErr.textContent = `'${id}' 는 등록된 멤버가 아닙니다.`;
+});
+authInput.addEventListener('keydown', e => { if (e.key === 'Enter') authBtn.click(); });
+
+document.getElementById('auth-logout').addEventListener('click', () => {
+  localStorage.removeItem(AUTH_KEY);
+  authPill.hidden = true;
+  showAuthModal();
+});
+
+const cachedAuth = readAuth();
+if (cachedAuth) {
+  setAuthUI(cachedAuth);
+  saveAuth(cachedAuth); // 슬라이딩 갱신
+  clipsLoaded = true;
+  loadClips();
+} else {
+  showAuthModal();
+}
 </script>
 </body>
 </html>
