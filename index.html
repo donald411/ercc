@@ -298,7 +298,12 @@
   #auth-modal .modal-notice p { margin: 8px 0; }
   #auth-modal .modal-notice .lead { font-weight: 600; }
   @media (max-width: 700px) {
-    #auth-modal h2 .greet-id { display: block; margin-top: 4px; }
+    #auth-modal h2 { flex-wrap: wrap; }
+    #auth-modal h2 .greet-id {
+      flex-basis: 100%;
+      width: 100%;
+      margin-top: 4px;
+    }
   }
   .auth-pill {
     display: inline-flex;
@@ -349,7 +354,14 @@
     .add-btn { padding: 8px 14px; font-size: 14px; }
     .meta { font-size: 14px; }
     nav.tabs { margin-top: 14px; }
-    nav.tabs button { padding: 10px 16px; font-size: 15px; flex: 1; }
+    nav.tabs button { padding: 10px 8px; font-size: 14px; flex: 1; line-height: 1.25; }
+    nav.tabs button .tab-sub {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      margin-top: 2px;
+      opacity: 0.85;
+    }
     main { padding: 12px; }
     section.group { border-radius: 10px; margin-bottom: 14px; }
     section.group h2 { font-size: 17px; padding: 12px 14px; }
@@ -364,10 +376,10 @@
       grid-template-columns: max-content auto 1fr;
       grid-template-areas:
         "date video kind"
-        "p1 p1 p2"
         "title title title"
+        "p1 p2 ."
         "author author author";
-      column-gap: 10px;
+      column-gap: 6px;
       row-gap: 6px;
       padding: 14px 16px;
       border-bottom: 1px solid var(--border);
@@ -446,8 +458,8 @@
     #by-kind table tr {
       grid-template-areas:
         "date video video"
-        "p1 p1 p2"
         "title title title"
+        "p1 p2 ."
         "author author author";
     }
   }
@@ -468,7 +480,7 @@
       <h2><span class="tag">ERCC</span><span class="greet-prefix">환영합니다,</span> <span class="greet-id" id="notice-greeting"></span></h2>
       <div class="modal-notice">
         <p class="lead">🏀 몇십년 후에도 다시 찾아볼 수 있는 우리들의 영상앨범을 위해 자발적인 클립정보 등록 부탁드립니다.</p>
-        <p>🈚 저희 채널은 수익화와는 무관합니다.<br>수익화 조건이 충족될 가능성도 거의 0%이고, 조건을 충족한다 하더라도 채널의 취지와 맞게 비수익채널로 유지될 것입니다.</p>
+        <p>🈚 저희 채널은 수익화와는 무관합니다.<br>수익화 조건이 충족될 가능성도 희박하고, 조건을 충족한다 하더라도 채널의 취지와 맞게 비수익채널로 유지될 것입니다.</p>
         <p>비수익으로 운영되는 만큼 멤버들의 자발적 노력으로 유지된다는 점, 응원하는 마음으로 봐주시면 감사하겠습니다.</p>
       </div>
       <button type="button" class="modal-submit" id="notice-ok">확인</button>
@@ -490,7 +502,7 @@
   <div class="meta">으랏차차 농구 · 총 <span id="total">-</span>개 클립</div>
   <nav class="tabs">
     <button data-view="by-game" class="active">게임별</button>
-    <button data-view="by-player">개인별 (선수 1)</button>
+    <button data-view="by-player">개인별<span class="tab-sub"> (선수 1)</span></button>
     <button data-view="by-kind">영상타입별</button>
   </nav>
 </header>
@@ -505,7 +517,7 @@
 <footer>
   <div class="footer-notice">
     <p class="lead">🏀 몇십년 후에도 다시 찾아볼 수 있는 우리들의 영상앨범을 위해 자발적인 클립정보 등록 부탁드립니다.</p>
-    <p>🈚 저희 채널은 수익화와는 무관합니다. 수익화 조건이 충족될 가능성도 거의 0%이고, 조건을 충족한다 하더라도 채널의 취지와 맞게 비수익채널로 유지될 것입니다.</p>
+    <p>🈚 저희 채널은 수익화와는 무관합니다. 수익화 조건이 충족될 가능성도 희박하고, 조건을 충족한다 하더라도 채널의 취지와 맞게 비수익채널로 유지될 것입니다.</p>
     <p>비수익으로 운영되는 만큼 멤버들의 자발적 노력으로 유지된다는 점, 응원하는 마음으로 봐주시면 감사하겠습니다.</p>
   </div>
   Powered by DH An · <a href="submit.html">클립정보 등록하기</a>
