@@ -332,74 +332,6 @@
   }
   .auth-pill .logout-btn:hover { text-decoration: underline; }
 
-  /* ===== 인앱 브라우저 경고 ===== */
-  #inapp-warning {
-    position: fixed;
-    inset: 0;
-    background: #fff;
-    z-index: 300;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-  #inapp-warning.hidden { display: none; }
-  #inapp-warning .warn-card {
-    max-width: 420px;
-    width: 100%;
-    text-align: center;
-    background: var(--accent-soft);
-    border: 2px solid var(--accent);
-    border-radius: 14px;
-    padding: 28px 22px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-  }
-  #inapp-warning h2 {
-    font-size: 20px;
-    color: var(--accent);
-    margin: 0 0 14px;
-    line-height: 1.4;
-    word-break: keep-all;
-  }
-  #inapp-warning p {
-    font-size: 15px;
-    line-height: 1.6;
-    margin: 8px 0;
-    color: var(--text);
-    word-break: keep-all;
-  }
-  #inapp-warning .small {
-    font-size: 13px;
-    color: var(--muted);
-    margin-top: 14px;
-  }
-  #inapp-warning .url-row {
-    display: flex;
-    gap: 6px;
-    margin-top: 10px;
-  }
-  #inapp-warning .url-row input {
-    flex: 1;
-    min-width: 0;
-    padding: 10px 12px;
-    border: 1px solid var(--border-strong);
-    border-radius: 6px;
-    font-size: 13px;
-    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-  }
-  #inapp-warning .url-row button {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 6px;
-    font-weight: 700;
-    cursor: pointer;
-    font-size: 14px;
-    flex-shrink: 0;
-  }
-  #inapp-warning .url-row button:hover { background: #e85d00; }
-
   /* ===== Toast (URL 복사 알림) ===== */
   #toast {
     position: fixed;
@@ -562,18 +494,6 @@
 </head>
 <body>
 
-<div id="inapp-warning" class="hidden">
-  <div class="warn-card">
-    <h2>⚠️ 카카오톡/네이버 안에서는<br>작동하지 않습니다</h2>
-    <p>우상단 <b>⋮</b> 메뉴 → <b>"다른 브라우저로 열기"</b><br>를 눌러 크롬/사파리에서 열어주세요.</p>
-    <p class="small">또는 아래 URL을 복사해서 브라우저에 붙여넣기</p>
-    <div class="url-row">
-      <input id="inapp-url" type="text" readonly>
-      <button type="button" id="inapp-copy">복사</button>
-    </div>
-  </div>
-</div>
-
 <div id="auth-modal" class="hidden">
   <div class="modal-card">
     <div id="auth-step-input">
@@ -632,25 +552,6 @@
 
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-// ===== 인앱 브라우저 감지 (카톡/네이버/페북/인스타/라인 등) =====
-const isInApp = /KAKAOTALK|NAVER|FB_IAB|FBAN|FBAV|Instagram|Line|;wv\)/i.test(navigator.userAgent);
-if (isInApp) {
-  const warn = document.getElementById('inapp-warning');
-  document.getElementById('inapp-url').value = location.href;
-  warn.classList.remove('hidden');
-  document.getElementById('inapp-copy').addEventListener('click', () => {
-    const inp = document.getElementById('inapp-url');
-    inp.select();
-    inp.setSelectionRange(0, 99999);
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(location.href).catch(() => document.execCommand('copy'));
-    } else {
-      document.execCommand('copy');
-    }
-    document.getElementById('inapp-copy').textContent = '복사됨';
-  });
-}
 
 const SUPABASE_URL = 'https://wfwzxnyelpbgjxlovjgo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indmd3p4bnllbHBiZ2p4bG92amdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNDM3NDcsImV4cCI6MjA3NTkxOTc0N30.STu6r2vK5ghEBXHXF_IYdJPsjaxc0efUEUn3pbSrAXM';
