@@ -504,6 +504,16 @@
     /* 작성자 작게 */
     table td.cell-author { font-size: 13px; color: var(--muted); }
 
+    /* 모바일에선 player 의 nowrap 풀어 grid 첫 컬럼이 늘어나는 것 방지
+       (긴 player1 이 grid-column 1 을 지배해 date chip ↔ timecode 공백이 커지던 문제) */
+    table td.cell-p1, table td.player2 { min-width: 0; }
+    table td.cell-p1 .player,
+    table td.player2 {
+      white-space: normal;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+    }
+
     /* 영상타입별 뷰 모바일 카드: kind 셀이 없으므로 video 가 그 자리까지 차지 */
     #by-kind table tr {
       grid-template-areas:
@@ -817,13 +827,41 @@ function showToast(msg, ms = 1500) {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), ms);
 }
 
+function fallbackCopy(text) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '0';
+    ta.style.left = '-9999px';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 function copyToClipboard(url) {
+  // 모던 API 시도 → 실패 시 fallback (모바일/인앱 환경 호환)
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(url).then(
       () => showToast('🔗 copy 되었습니다'),
-      () => showToast('복사 실패')
+      () => {
+        const ok = fallbackCopy(url);
+        showToast(ok ? '🔗 copy 되었습니다' : '복사 실패');
+      }
     );
+    return;
   }
+  const ok = fallbackCopy(url);
+  showToast(ok ? '🔗 copy 되었습니다' : '복사 실패');
 }
 
 document.addEventListener('click', e => {
