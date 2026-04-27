@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ERCC 클립정보 등록</title>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>
   :root {
     --bg: #fafbfc;
@@ -421,7 +420,6 @@
         <div class="hint">같은 영상의 종료 지점 URL. 내가 생각하는 지점보다 2초정도 뒤로 설정</div>
       </div>
 
-      <div id="turnstile-widget" style="margin-bottom: 12px;"></div>
       <button type="submit" class="submit" id="submit-btn">클립정보 등록</button>
     </form>
   </div>
@@ -438,12 +436,11 @@
 
 <script>
 // ============================================================
-// ERCC submit form: Turnstile + Edge Function 경유 INSERT
+// ERCC submit form: Edge Function 경유 INSERT (rate limit + member 검증)
 // ============================================================
 
 const SUPABASE_URL       = 'https://wfwzxnyelpbgjxlovjgo.supabase.co';
 const SUPABASE_ANON_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indmd3p4bnllbHBiZ2p4bG92amdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNDM3NDcsImV4cCI6MjA3NTkxOTc0N30.STu6r2vK5ghEBXHXF_IYdJPsjaxc0efUEUn3pbSrAXM';
-const TURNSTILE_SITE_KEY = '0x4AAAAAADC3ZBzU0cDichSX';
 const EDGE_URL           = `${SUPABASE_URL}/functions/v1/submit-clip`;
 
 const form    = document.getElementById('f');
@@ -590,70 +587,6 @@ function extractSec(url) {
   return m ? parseInt(m[1], 10) : null;
 }
 
-// ===== Turnstile 위젯 등록 =====
-let widgetId = null;
-let pendingTokenResolve = null;
-
-function waitForTurnstile() {
-  return new Promise(resolve => {
-    if (window.turnstile) return resolve(window.turnstile);
-    const timer = setInterval(() => {
-      if (window.turnstile) {
-        clearInterval(timer);
-        resolve(window.turnstile);
-      }
-    }, 50);
-  });
-}
-
-async function initTurnstile() {
-  const turnstile = await waitForTurnstile();
-  widgetId = turnstile.render('#turnstile-widget', {
-    sitekey: TURNSTILE_SITE_KEY,
-    size: 'invisible',
-    callback: (token) => {
-      if (pendingTokenResolve) {
-        pendingTokenResolve(token);
-        pendingTokenResolve = null;
-      }
-    },
-    'error-callback': () => {
-      if (pendingTokenResolve) {
-        pendingTokenResolve(null);
-        pendingTokenResolve = null;
-      }
-    },
-    'expired-callback': () => {
-      if (pendingTokenResolve) {
-        pendingTokenResolve(null);
-        pendingTokenResolve = null;
-      }
-    },
-  });
-}
-
-async function getTurnstileToken() {
-  if (widgetId === null) {
-    showAlert('error', 'CAPTCHA 가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
-    return null;
-  }
-  const turnstile = window.turnstile;
-  return new Promise(resolve => {
-    pendingTokenResolve = resolve;
-    turnstile.reset(widgetId);
-    turnstile.execute(widgetId);
-    // 30초 안에 응답 없으면 timeout
-    setTimeout(() => {
-      if (pendingTokenResolve === resolve) {
-        pendingTokenResolve = null;
-        resolve(null);
-      }
-    }, 30000);
-  });
-}
-
-initTurnstile();
-
 // ===== 폼 제출 =====
 form.addEventListener('submit', async e => {
   e.preventDefault();
@@ -708,17 +641,6 @@ form.addEventListener('submit', async e => {
   }
 
   btn.disabled = true;
-  btn.textContent = '검증 중...';
-
-  // Turnstile 토큰 받기
-  const token = await getTurnstileToken();
-  if (!token) {
-    btn.disabled = false;
-    btn.textContent = '클립정보 등록';
-    showAlert('error', 'CAPTCHA 검증 실패. 새로고침 후 다시 시도하세요.');
-    return;
-  }
-
   btn.textContent = '등록 중...';
 
   // Edge Function 호출
@@ -732,7 +654,6 @@ form.addEventListener('submit', async e => {
         'apikey':         SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({
-        token,
         payload: {
           start_url: data.start_url,
           end_url:   data.end_url,
