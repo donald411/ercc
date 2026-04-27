@@ -162,6 +162,29 @@
   }
   a.yt:hover { background: #ffd0d0; }
   a.yt::before { content: "▶"; font-size: 13px; }
+  .video-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .yt-copy {
+    background: #fff;
+    border: 1px solid var(--border-strong);
+    color: var(--muted);
+    padding: 5px 9px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+  .yt-copy:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
   .kind {
     display: inline-block;
     padding: 4px 12px;
@@ -559,7 +582,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const fmtDate = d => d ? `${d.slice(0,4)}/${d.slice(4,6)}/${d.slice(6,8)}` : '날짜 미정';
-const shortDate = d => d && d.length >= 8 ? `${d.slice(2,4)}/${d.slice(4,6)}/${d.slice(6,8)}` : '?';
+const shortDate = d => d && d.length >= 8 ? `${d.slice(4,6)}/${d.slice(6,8)}` : '?';
 const kindClass = k => (k || '').replace(/[^가-힣A-Za-z0-9]/g, '');
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -571,7 +594,7 @@ const ytLabel = url => {
   return `${mm}:${String(ss).padStart(2,'0')}`;
 };
 
-const linkCell = url => `<a class="yt" href="${esc(url)}" target="_blank" rel="noopener">${ytLabel(url)}</a>`;
+const linkCell = url => `<span class="video-cell"><a class="yt" href="${esc(url)}" target="_blank" rel="noopener">${ytLabel(url)}</a><button type="button" class="yt-copy" data-url="${esc(url)}" aria-label="URL 복사">copy</button></span>`;
 const kindCell = k => `<span class="kind ${kindClass(k)}">${esc(k)}</span>`;
 
 async function loadClips() {
@@ -794,17 +817,29 @@ function showToast(msg, ms = 1500) {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), ms);
 }
 
-document.addEventListener('click', e => {
-  const a = e.target.closest('a.yt');
-  if (!a) return;
-  const url = a.href;
+function copyToClipboard(url) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(url).then(
-      () => showToast('🔗 URL 이 복사되었습니다'),
-      () => {}
+      () => showToast('🔗 copy 되었습니다'),
+      () => showToast('복사 실패')
     );
   }
-  // a 의 기본 동작(새 탭 열기) 그대로 유지
+}
+
+document.addEventListener('click', e => {
+  // copy 버튼: 영상 안 열고 URL 만 복사
+  const btn = e.target.closest('button.yt-copy');
+  if (btn) {
+    e.preventDefault();
+    e.stopPropagation();
+    copyToClipboard(btn.dataset.url);
+    return;
+  }
+  // timecode 링크: 영상 새 탭으로 열면서 URL 도 복사
+  const a = e.target.closest('a.yt');
+  if (a) {
+    copyToClipboard(a.href);
+  }
 });
 
 // ========== 멤버 인증 게이트 ==========
