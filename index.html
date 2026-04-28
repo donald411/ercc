@@ -240,6 +240,44 @@
   .cell-date-mobile-only { display: none; }
   .date-chip-mobile { display: none; }
 
+  /* 최근등록 필터 */
+  .recent-filter {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 22px;
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .recent-filter .filter-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .recent-filter select {
+    padding: 8px 12px;
+    border: 2px solid var(--border-strong);
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .recent-filter select:focus { outline: none; border-color: var(--accent); }
+  .recent-count { color: var(--muted); font-size: 14px; }
+  .recent-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 15px;
+  }
+
   /* ===== 인증 모달 ===== */
   #auth-modal {
     position: fixed;
@@ -413,6 +451,14 @@
       opacity: 0.85;
     }
     main { padding: 12px; }
+    .recent-filter {
+      padding: 10px 14px;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .recent-filter .filter-label { font-size: 14px; }
+    .recent-filter select { font-size: 14px; padding: 6px 10px; }
+    .recent-count { font-size: 13px; }
     section.group { border-radius: 10px; margin-bottom: 14px; }
     section.group h2 { font-size: 17px; padding: 12px 14px; }
     section.group h2 .count { font-size: 13px; }
@@ -561,15 +607,32 @@
   </h1>
   <div class="meta">으랏차차 농구 · 총 <span id="total">-</span>개 클립</div>
   <nav class="tabs">
-    <button data-view="by-game" class="active">게임별</button>
-    <button data-view="by-player">개인별<span class="tab-sub"> (선수 1)</span></button>
+    <button data-view="by-recent" class="active">최근등록</button>
+    <button data-view="by-game">게임별</button>
+    <button data-view="by-player">개인별</button>
     <button data-view="by-kind">영상타입별</button>
   </nav>
 </header>
 
 <main>
   <div id="status">클립 로딩 중...</div>
-  <div id="by-game" class="view active" hidden></div>
+  <div id="by-recent" class="view active" hidden>
+    <div class="recent-filter">
+      <label class="filter-label">기간
+        <select id="recent-window">
+          <option value="since-default" selected>4/25 오후 이후</option>
+          <option value="1">최근 1일</option>
+          <option value="3">최근 3일</option>
+          <option value="7">최근 7일</option>
+          <option value="15">최근 15일</option>
+          <option value="30">최근 30일</option>
+        </select>
+      </label>
+      <span class="recent-count">표시 <b id="recent-displayed">-</b>개</span>
+    </div>
+    <div id="by-recent-sections"></div>
+  </div>
+  <div id="by-game" class="view" hidden></div>
   <div id="by-player" class="view" hidden></div>
   <div id="by-kind" class="view" hidden></div>
 </main>
@@ -611,7 +674,7 @@ async function loadClips() {
   const statusEl = document.getElementById('status');
   const { data, error } = await supabase
     .from('ercc_clips')
-    .select('id, start_url, end_url, player1, player2, title, kind, author, game_date, game_num, start_sec')
+    .select('id, start_url, end_url, player1, player2, title, kind, author, game_date, game_num, start_sec, created_at')
     .order('game_date', { ascending: true, nullsFirst: false })
     .order('game_num',  { ascending: true, nullsFirst: false })
     .order('id',        { ascending: true });
@@ -632,7 +695,8 @@ async function loadClips() {
     author: r.author,
     date: r.game_date || "미분류",
     game: r.game_num ?? '?',
-    startSec: r.start_sec ?? 0
+    startSec: r.start_sec ?? 0,
+    createdAt: r.created_at
   }));
 
   document.getElementById('total').textContent = clips.length;
@@ -647,6 +711,7 @@ async function loadClips() {
   document.getElementById('by-game').hidden = false;
   document.getElementById('by-player').hidden = false;
   document.getElementById('by-kind').hidden = false;
+  document.getElementById('by-recent').hidden = false;
 }
 
 // 영상타입별 우선 노출 순서 (나머지는 ko 가나다순)
@@ -802,6 +867,103 @@ function render(clips) {
     `;
   }).join('');
   document.getElementById('by-kind').innerHTML = kindHtml;
+
+  // ========== 최근등록 뷰 (필터 + 시간 단위 그룹) ==========
+  renderRecent(clips);
+  const winSel = document.getElementById('recent-window');
+  if (winSel && !winSel.dataset.bound) {
+    winSel.addEventListener('change', () => renderRecent(clips));
+    winSel.dataset.bound = '1';
+  }
+}
+
+// 시즌 시작 = 2026-04-25 12:00 KST (UTC+9)
+const SEASON_START_MS = new Date('2026-04-25T12:00:00+09:00').getTime();
+
+function getRecentThreshold(value) {
+  if (value === 'since-default') return SEASON_START_MS;
+  const days = parseInt(value, 10);
+  return Date.now() - days * 24 * 60 * 60 * 1000;
+}
+
+function renderRecent(clips) {
+  const sel = document.getElementById('recent-window');
+  const value = sel ? sel.value : 'since-default';
+  const threshold = getRecentThreshold(value);
+
+  const filtered = clips.filter(c => {
+    if (!c.createdAt) return false;
+    const t = new Date(c.createdAt).getTime();
+    return !isNaN(t) && t >= threshold;
+  });
+
+  const displayedEl = document.getElementById('recent-displayed');
+  if (displayedEl) displayedEl.textContent = filtered.length;
+
+  const sectionsEl = document.getElementById('by-recent-sections');
+  if (!sectionsEl) return;
+
+  if (filtered.length === 0) {
+    sectionsEl.innerHTML = '<div class="recent-empty">해당 기간에 등록된 클립이 없습니다.</div>';
+    return;
+  }
+
+  // KST 기준 시간 단위 그룹 키
+  const hourKey = iso => {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '미분류';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    return `${y}-${m}-${day} ${h}`;
+  };
+
+  const byRecent = {};
+  for (const c of filtered) {
+    const k = hourKey(c.createdAt);
+    (byRecent[k] ||= []).push(c);
+  }
+  const recentKeys = Object.keys(byRecent).sort().reverse();
+
+  const recentHtml = recentKeys.map(key => {
+    const list = byRecent[key].slice().sort((a, b) =>
+      String(b.createdAt || '').localeCompare(String(a.createdAt || ''))
+    );
+    const dayLabel = key === '미분류'
+      ? '미분류'
+      : `${key.slice(0, 4)}/${key.slice(5, 7)}/${key.slice(8, 10)} ${key.slice(11, 13)}시`;
+    const rows = list.map(c => `
+      <tr>
+        <td class="cell-date" data-label="경기"><span class="date-cell">${fmtDate(c.date)} G${c.game}</span><span class="date-chip-mobile">${shortDate(c.date)} #${c.game}</span></td>
+        <td class="cell-video" data-label="영상">${linkCell(c.url)}</td>
+        <td class="cell-kind" data-label="타입">${kindCell(c.kind)}</td>
+        <td class="cell-p1" data-label="선수1"><span class="player">${esc(c.p1)}</span></td>
+        <td class="player2" data-label="선수2">${c.p2 ? esc(c.p2) : '<span class="empty">-</span>'}</td>
+        <td class="title-cell" data-label="제목">${esc(c.title)}</td>
+        <td class="author cell-author" data-label="작성자">${esc(c.author)}</td>
+      </tr>
+    `).join('');
+    return `
+      <section class="group">
+        <h2>📅 ${dayLabel} 등록<span class="count">${list.length}개</span></h2>
+        <table>
+          <thead><tr>
+            <th style="width:150px">경기</th>
+            <th style="width:100px">영상</th>
+            <th style="width:130px">영상타입</th>
+            <th style="width:110px">선수 1</th>
+            <th style="width:110px">선수 2</th>
+            <th>제목</th>
+            <th style="width:100px">작성자</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </section>
+    `;
+  }).join('');
+
+  sectionsEl.innerHTML = recentHtml;
 }
 
 // ========== 탭 전환 ==========
