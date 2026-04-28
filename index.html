@@ -620,7 +620,7 @@
     <div class="recent-filter">
       <label class="filter-label">기간
         <select id="recent-window">
-          <option value="since-default" selected>4/25 오후 이후</option>
+          <option value="all" selected>전체</option>
           <option value="1">최근 1일</option>
           <option value="3">최근 3일</option>
           <option value="7">최근 7일</option>
@@ -877,18 +877,15 @@ function render(clips) {
   }
 }
 
-// 시즌 시작 = 2026-04-25 12:00 KST (UTC+9)
-const SEASON_START_MS = new Date('2026-04-25T12:00:00+09:00').getTime();
-
 function getRecentThreshold(value) {
-  if (value === 'since-default') return SEASON_START_MS;
+  if (value === 'all') return 0;
   const days = parseInt(value, 10);
   return Date.now() - days * 24 * 60 * 60 * 1000;
 }
 
 function renderRecent(clips) {
   const sel = document.getElementById('recent-window');
-  const value = sel ? sel.value : 'since-default';
+  const value = sel ? sel.value : 'all';
   const threshold = getRecentThreshold(value);
 
   const filtered = clips.filter(c => {
