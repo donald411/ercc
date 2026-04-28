@@ -93,6 +93,8 @@
     border-color: var(--accent);
     color: #fff;
   }
+  /* PC 기본: 풀 텍스트 / 모바일: 짧은 텍스트 */
+  nav.tabs .tab-short { display: none; }
   main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   #status {
     text-align: center;
@@ -443,6 +445,8 @@
     .meta { font-size: 14px; }
     nav.tabs { margin-top: 14px; }
     nav.tabs button { padding: 10px 8px; font-size: 14px; flex: 1; line-height: 1.25; }
+    nav.tabs .tab-full { display: none; }
+    nav.tabs .tab-short { display: inline; }
     nav.tabs button .tab-sub {
       display: block;
       font-size: 11px;
@@ -610,7 +614,7 @@
     <button data-view="by-recent" class="active">최근등록</button>
     <button data-view="by-game">게임별</button>
     <button data-view="by-player">개인별</button>
-    <button data-view="by-kind">영상타입별</button>
+    <button data-view="by-kind"><span class="tab-full">영상타입별</span><span class="tab-short">타입별</span></button>
   </nav>
 </header>
 
@@ -923,13 +927,17 @@ function renderRecent(clips) {
   }
   const recentKeys = Object.keys(byRecent).sort().reverse();
 
+  const WEEKDAY = ['(일)', '(월)', '(화)', '(수)', '(목)', '(금)', '(토)'];
   const recentHtml = recentKeys.map(key => {
     const list = byRecent[key].slice().sort((a, b) =>
       String(b.createdAt || '').localeCompare(String(a.createdAt || ''))
     );
-    const dayLabel = key === '미분류'
-      ? '미분류'
-      : `${key.slice(0, 4)}/${key.slice(5, 7)}/${key.slice(8, 10)} ${key.slice(11, 13)}시`;
+    let dayLabel = '미분류';
+    if (key !== '미분류') {
+      const d = new Date(`${key.slice(0, 10)}T00:00:00`);
+      const wd = isNaN(d.getTime()) ? '' : WEEKDAY[d.getDay()];
+      dayLabel = `${key.slice(0, 4)}/${key.slice(5, 7)}/${key.slice(8, 10)} ${wd} ${key.slice(11, 13)}시`;
+    }
     const rows = list.map(c => `
       <tr>
         <td class="cell-date" data-label="경기"><span class="date-cell">${fmtDate(c.date)} G${c.game}</span><span class="date-chip-mobile">${shortDate(c.date)} #${c.game}</span></td>
