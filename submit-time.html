@@ -389,6 +389,55 @@
     }
   }
 </style>
+<!-- ===== 페이지뷰 추적 (ercc_page_views) ===== -->
+<script>
+(function () {
+  try {
+    const SUPABASE_URL = 'https://wfwzxnyelpbgjxlovjgo.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indmd3p4bnllbHBiZ2p4bG92amdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNDM3NDcsImV4cCI6MjA3NTkxOTc0N30.STu6r2vK5ghEBXHXF_IYdJPsjaxc0efUEUn3pbSrAXM';
+    const PAGE = 'submit-time';
+
+    let author = null;
+    try {
+      const raw = localStorage.getItem('ercc_auth_member');
+      if (raw) {
+        if (raw.startsWith('{')) {
+          const o = JSON.parse(raw);
+          if (o.id && o.exp && Date.now() < o.exp) author = o.id;
+        } else {
+          author = raw;
+        }
+      }
+    } catch (e) {}
+
+    let sid = sessionStorage.getItem('ercc_pv_sid');
+    if (!sid) {
+      sid = (crypto.randomUUID && crypto.randomUUID()) ||
+            (Date.now() + '-' + Math.random().toString(36).slice(2));
+      sessionStorage.setItem('ercc_pv_sid', sid);
+    }
+
+    fetch(SUPABASE_URL + '/rest/v1/ercc_page_views', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        author: author,
+        page: PAGE,
+        path: location.pathname,
+        referrer: document.referrer || null,
+        user_agent: navigator.userAgent,
+        session_id: sid
+      }),
+      keepalive: true
+    }).catch(function () {});
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 
