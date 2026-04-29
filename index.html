@@ -1080,18 +1080,62 @@ function copyToClipboard(url) {
   showToast(ok ? '🔗 copy 되었습니다' : '복사 실패');
 }
 
+function trackClipEvent(eventType, url) {
+  try {
+    const m = (url || '').match(/youtu\.be\/([^?#]+)\?t=(\d+)(?:,(\d+))?/);
+    const video_id = m ? m[1] : null;
+    const start_sec = m ? parseInt(m[2], 10) : null;
+    const end_sec   = m && m[3] ? parseInt(m[3], 10) : null;
+
+    let author = null;
+    try {
+      const raw = localStorage.getItem('ercc_auth_member');
+      if (raw) {
+        if (raw.startsWith('{')) {
+          const o = JSON.parse(raw);
+          if (o.id && o.exp && Date.now() < o.exp) author = o.id;
+        } else {
+          author = raw;
+        }
+      }
+    } catch (e) {}
+
+    const sid = sessionStorage.getItem('ercc_pv_sid') || null;
+
+    fetch(SUPABASE_URL + '/rest/v1/ercc_clip_events', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        author, session_id: sid, event_type: eventType,
+        url, video_id, start_sec, end_sec,
+        page: 'index',
+        user_agent: navigator.userAgent,
+        referrer: document.referrer || null
+      }),
+      keepalive: true
+    }).catch(function () {});
+  } catch (e) {}
+}
+
 document.addEventListener('click', e => {
   // copy 버튼: 영상 안 열고 URL 만 복사
   const btn = e.target.closest('button.yt-copy');
   if (btn) {
     e.preventDefault();
     e.stopPropagation();
+    trackClipEvent('copy', btn.dataset.url);
     copyToClipboard(btn.dataset.url);
     return;
   }
   // timecode 링크: 영상 새 탭으로 열면서 URL 도 복사
   const a = e.target.closest('a.yt');
   if (a) {
+    trackClipEvent('play', a.href);
     copyToClipboard(a.href);
   }
 });
