@@ -778,12 +778,9 @@ const cmpTimeDesc = (a, b) => Number(b.startSec) - Number(a.startSec);
 // 게임별 섹션 내부 정렬: 시간 ASC
 const sortInGame = cmpTimeAsc;
 
-// 개인별 섹션 내부: 날짜 DESC → 게임 DESC → 시간 ASC
-const sortInPlayer = (a, b) => {
-  let r = cmpDateDesc(a, b); if (r !== 0) return r;
-  r = cmpGameDesc(a, b);     if (r !== 0) return r;
-  return cmpTimeAsc(a, b);
-};
+// 개인별 섹션 내부: 등록시간(created_at) DESC — 최신 등록이 위로
+const sortInPlayer = (a, b) =>
+  String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
 
 // 영상타입별 섹션 내부: 날짜 DESC → 게임 DESC → 시간 DESC
 const sortInKind = (a, b) => {
