@@ -443,8 +443,16 @@
     header h1 .tag { font-size: 14px; padding: 3px 8px; margin-right: 6px; vertical-align: 3px; }
     .add-btn { padding: 8px 14px; font-size: 14px; }
     .meta { font-size: 14px; }
-    nav.tabs { margin-top: 14px; }
-    nav.tabs button { padding: 10px 8px; font-size: 14px; flex: 1; line-height: 1.25; }
+    nav.tabs {
+      margin-top: 14px;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+    nav.tabs::-webkit-scrollbar { height: 4px; }
+    nav.tabs::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+    nav.tabs button { padding: 10px 12px; font-size: 14px; flex: 0 0 auto; line-height: 1.25; white-space: nowrap; }
     nav.tabs .tab-full { display: none; }
     nav.tabs .tab-short { display: inline; }
     nav.tabs button .tab-sub {
@@ -661,6 +669,7 @@
   <div class="meta">으랏차차 농구 · 총 <span id="total">-</span>개 클립</div>
   <nav class="tabs">
     <button data-view="by-recent" class="active">최근등록</button>
+    <button data-view="by-mine">내영상</button>
     <button data-view="by-game">게임별</button>
     <button data-view="by-player">개인별</button>
     <button data-view="by-kind"><span class="tab-full">영상타입별</span><span class="tab-short">타입별</span></button>
@@ -685,6 +694,7 @@
     </div>
     <div id="by-recent-sections"></div>
   </div>
+  <div id="by-mine" class="view" hidden></div>
   <div id="by-game" class="view" hidden></div>
   <div id="by-player" class="view" hidden></div>
   <div id="by-kind" class="view" hidden></div>
@@ -765,6 +775,7 @@ async function loadClips() {
   document.getElementById('by-player').hidden = false;
   document.getElementById('by-kind').hidden = false;
   document.getElementById('by-recent').hidden = false;
+  document.getElementById('by-mine').hidden = false;
 }
 
 // 영상타입별 우선 노출 순서 (나머지는 ko 가나다순)
@@ -918,6 +929,9 @@ function render(clips) {
   }).join('');
   document.getElementById('by-kind').innerHTML = kindHtml;
 
+  // ========== 내영상 뷰 (player1/player2 == currentMyId, 등록 DESC) ==========
+  renderMine(clips);
+
   // ========== 최근등록 뷰 (필터 + 시간 단위 그룹) ==========
   renderRecent(clips);
   const winSel = document.getElementById('recent-window');
@@ -925,6 +939,53 @@ function render(clips) {
     winSel.addEventListener('change', () => renderRecent(clips));
     winSel.dataset.bound = '1';
   }
+}
+
+function renderMine(clips) {
+  const container = document.getElementById('by-mine');
+  if (!container) return;
+  const myId = currentMyId;
+  if (!myId) {
+    container.innerHTML = '<div class="recent-empty">로그인 후 표시됩니다.</div>';
+    return;
+  }
+  const isMine = c => {
+    if (c.p1 === myId) return true;
+    return (c.p2 || '').split(',').map(s => s.trim()).filter(Boolean).includes(myId);
+  };
+  const list = clips.filter(isMine).sort(sortInPlayer);
+  if (list.length === 0) {
+    container.innerHTML = `<div class="recent-empty">'${esc(myId)}' 님이 선수 1 또는 선수 2 로 등록된 클립이 없습니다.</div>`;
+    return;
+  }
+  const rows = list.map(c => `
+    <tr>
+      <td class="cell-date" data-label="경기"><span class="date-cell">${fmtDate(c.date)} G${c.game}</span><span class="date-chip-mobile">${shortDate(c.date)} #${c.game}</span></td>
+      <td class="cell-video" data-label="영상">${linkCell(c.url)}</td>
+      <td class="cell-kind" data-label="타입">${kindCell(c.kind)}</td>
+      <td class="cell-p1" data-label="선수1"><span class="player">${esc(c.p1)}</span></td>
+      <td class="player2" data-label="선수2">${c.p2 ? esc(c.p2) : '<span class="empty">-</span>'}</td>
+      <td class="title-cell" data-label="제목">${esc(c.title)}</td>
+      <td class="author cell-author" data-label="작성자">${esc(c.author)}</td>
+    </tr>
+  `).join('');
+  container.innerHTML = `
+    <section class="group">
+      <h2>${esc(myId)} 님 영상<span class="count">${list.length}개</span></h2>
+      <table>
+        <thead><tr>
+          <th style="width:150px">경기</th>
+          <th style="width:100px">영상</th>
+          <th style="width:130px">영상타입</th>
+          <th style="width:110px">선수 1</th>
+          <th style="width:110px">선수 2</th>
+          <th>제목</th>
+          <th style="width:100px">작성자</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </section>
+  `;
 }
 
 function getRecentThreshold(value) {
@@ -1141,6 +1202,8 @@ document.addEventListener('click', e => {
 const AUTH_KEY   = 'ercc_auth_member';
 const SESSION_MS = 1 * 24 * 60 * 60 * 1000; // 슬라이딩 1일
 
+let currentMyId = null; // 로그인된 멤버 id (내영상 탭 필터에 사용)
+
 function readAuth() {
   const raw = localStorage.getItem(AUTH_KEY);
   if (!raw) return null;
@@ -1208,6 +1271,7 @@ document.getElementById('notice-ok').addEventListener('click', () => {
 function setAuthUI(id) {
   authIdEl.textContent = id;
   authPill.hidden = false;
+  currentMyId = id;
 }
 
 async function tryAuth(id) {
