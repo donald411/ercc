@@ -950,8 +950,12 @@ function renderMine(clips) {
     return;
   }
   // 연도(트레일링 숫자) 포함/제외 두 키 OR 매칭
+  // 단, 동명이인 베이스명은 OR 매칭 금지 — 연도 포함 정확 매칭만
+  const AMBIGUOUS_BASE_NAMES = new Set(['현진']);
   const myIdBare = myId.replace(/\d+$/, '');
-  const myKeys = Array.from(new Set([myId, myIdBare].filter(Boolean)));
+  const myKeys = AMBIGUOUS_BASE_NAMES.has(myIdBare)
+    ? [myId]
+    : Array.from(new Set([myId, myIdBare].filter(Boolean)));
   const isMine = c => {
     const p2parts = (c.p2 || '').split(',').map(s => s.trim()).filter(Boolean);
     return myKeys.some(k => c.p1 === k || p2parts.includes(k));
