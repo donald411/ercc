@@ -733,19 +733,40 @@ const ytLabel = url => {
 const linkCell = url => `<span class="video-cell"><a class="yt" href="${esc(url)}" target="_blank" rel="noopener">${ytLabel(url)}</a><button type="button" class="yt-copy" data-url="${esc(url)}" aria-label="URL 복사">copy</button></span>`;
 const kindCell = k => `<span class="kind ${kindClass(k)}">${esc(k)}</span>`;
 
+// 멤버 id 기반 canonical 맵: bare 이름 → year-suffix id (동명이인 base 는 매핑 X)
+let canonicalMap = {};
+const canonical = name => canonicalMap[name] || name;
+
 async function loadClips() {
   const statusEl = document.getElementById('status');
-  const { data, error } = await supabase
-    .from('ercc_clips')
-    .select('id, start_url, end_url, player1, player2, title, kind, author, game_date, game_num, start_sec, created_at')
-    .order('game_date', { ascending: true, nullsFirst: false })
-    .order('game_num',  { ascending: true, nullsFirst: false })
-    .order('id',        { ascending: true });
+  const [clipRes, memRes] = await Promise.all([
+    supabase.from('ercc_clips')
+      .select('id, start_url, end_url, player1, player2, title, kind, author, game_date, game_num, start_sec, created_at')
+      .order('game_date', { ascending: true, nullsFirst: false })
+      .order('game_num',  { ascending: true, nullsFirst: false })
+      .order('id',        { ascending: true }),
+    supabase.from('members').select('id'),
+  ]);
+  const { data, error } = clipRes;
 
   if (error) {
     statusEl.textContent = `데이터 로드 오류: ${error.message}`;
     statusEl.classList.add('error');
     return;
+  }
+
+  // 멤버 → bare 그룹화. base 가 단일 멤버일 때만 bare → canonical 매핑 (동명이인 base 는 매핑 X)
+  const memberIds = ((memRes && memRes.data) || []).map(m => m.id);
+  const baseToIds = {};
+  for (const mid of memberIds) {
+    const bare = mid.replace(/\d+$/, '');
+    (baseToIds[bare] ||= []).push(mid);
+  }
+  canonicalMap = {};
+  for (const [bare, ids] of Object.entries(baseToIds)) {
+    if (ids.length === 1 && bare && bare !== ids[0]) {
+      canonicalMap[bare] = ids[0];
+    }
   }
 
   const clips = (data || []).map(r => ({
@@ -846,10 +867,17 @@ function render(clips) {
   }).join('');
   document.getElementById('by-game').innerHTML = gameHtml;
 
-  // ========== 개인별 뷰 ==========
+  // ========== 개인별 뷰 (p1 + p2 포함, canonical 기준 그룹화) ==========
   const byPlayer = {};
   for (const c of clips) {
-    (byPlayer[c.p1] ||= []).push(c);
+    const keys = new Set();
+    if (c.p1) keys.add(canonical(c.p1));
+    for (const p of (c.p2 || '').split(',').map(s => s.trim()).filter(Boolean)) {
+      keys.add(canonical(p));
+    }
+    for (const k of keys) {
+      (byPlayer[k] ||= []).push(c);
+    }
   }
   const playerKeys = Object.keys(byPlayer).sort((a,b) => a.localeCompare(b, 'ko'));
 
@@ -860,6 +888,7 @@ function render(clips) {
         <td class="cell-date" data-label="경기"><span class="date-cell">${fmtDate(c.date)} G${c.game}</span><span class="date-chip-mobile">${shortDate(c.date)} #${c.game}</span></td>
         <td class="cell-video" data-label="영상">${linkCell(c.url)}</td>
         <td class="cell-kind" data-label="타입">${kindCell(c.kind)}</td>
+        <td class="cell-p1" data-label="선수1"><span class="player">${esc(c.p1)}</span></td>
         <td class="player2" data-label="선수2">${c.p2 ? esc(c.p2) : '<span class="empty">-</span>'}</td>
         <td class="title-cell" data-label="제목">${esc(c.title)}</td>
         <td class="author cell-author" data-label="작성자">${esc(c.author)}</td>
@@ -873,6 +902,7 @@ function render(clips) {
             <th style="width:150px">경기</th>
             <th style="width:100px">영상</th>
             <th style="width:130px">영상타입</th>
+            <th style="width:110px">선수 1</th>
             <th style="width:110px">선수 2</th>
             <th>제목</th>
             <th style="width:100px">작성자</th>
@@ -949,21 +979,16 @@ function renderMine(clips) {
     container.innerHTML = '<div class="recent-empty">로그인 후 표시됩니다.</div>';
     return;
   }
-  // 연도(트레일링 숫자) 포함/제외 두 키 OR 매칭
-  // 단, 동명이인 베이스명은 OR 매칭 금지 — 연도 포함 정확 매칭만
-  const AMBIGUOUS_BASE_NAMES = new Set(['현진']);
-  const myIdBare = myId.replace(/\d+$/, '');
-  const myKeys = AMBIGUOUS_BASE_NAMES.has(myIdBare)
-    ? [myId]
-    : Array.from(new Set([myId, myIdBare].filter(Boolean)));
+  // canonical 비교: 두현 ↔ 두현71 같은 평준화는 자동, 현진77/현진86 은 분리 유지
+  const myCanon = canonical(myId);
   const isMine = c => {
+    if (canonical(c.p1) === myCanon) return true;
     const p2parts = (c.p2 || '').split(',').map(s => s.trim()).filter(Boolean);
-    return myKeys.some(k => c.p1 === k || p2parts.includes(k));
+    return p2parts.some(p => canonical(p) === myCanon);
   };
   const list = clips.filter(isMine).sort(sortInPlayer);
   if (list.length === 0) {
-    const keyLabel = myKeys.map(k => `'${esc(k)}'`).join(' 또는 ');
-    container.innerHTML = `<div class="recent-empty">${keyLabel} 님이 선수 1 또는 선수 2 로 등록된 클립이 없습니다.</div>`;
+    container.innerHTML = `<div class="recent-empty">'${esc(myCanon)}' 님이 선수 1 또는 선수 2 로 등록된 클립이 없습니다.</div>`;
     return;
   }
   const rows = list.map(c => `
