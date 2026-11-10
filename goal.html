@@ -143,6 +143,22 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// 앱 안 브라우저(카톡 등)는 닫으면 기록자 · 대기 기록이 지워질 수 있고 화면 꺼짐 방지도 안 된다 → 기본 브라우저로 넘긴다
+(() => {
+  const ua = navigator.userAgent;
+  if (/KAKAOTALK/i.test(ua)) {
+    location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+  } else if (/Android/i.test(ua) && /; wv\)/.test(ua)) {
+    const u = location.href.replace(/^https?:\/\//, '');
+    document.addEventListener('DOMContentLoaded', () => {
+      const a = document.createElement('a');
+      a.href = 'intent://' + u + '#Intent;scheme=https;package=com.android.chrome;end';
+      a.textContent = '앱 안 브라우저예요. 크롬으로 열기';
+      a.style.cssText = 'display:block;padding:12px 16px;background:#f5a524;color:#111;font-weight:800;text-align:center;text-decoration:none';
+      document.body.prepend(a);
+    });
+  }
+})();
 (() => {
   const SUPABASE_URL = 'https://wfwzxnyelpbgjxlovjgo.supabase.co';
   const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indmd3p4bnllbHBiZ2p4bG92amdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNDM3NDcsImV4cCI6MjA3NTkxOTc0N30.STu6r2vK5ghEBXHXF_IYdJPsjaxc0efUEUn3pbSrAXM';
