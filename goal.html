@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#111418">
+<meta name="robots" content="noindex">
+<title>골인 기록 | 으랏차차</title>
+<style>
+  :root {
+    --bg: #111418; --panel: #1b2027; --line: #2c333d; --text: #f2f4f7; --muted: #9aa4b1;
+    --start: #1f9d55; --start-d: #15803d; --goal: #f2542d; --goal-d: #c43d1c;
+    --end: #3b4452; --warn: #f5a524; --ok: #34c77b; --danger: #ef4444;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕", sans-serif;
+    font-size: 17px; touch-action: manipulation; -webkit-user-select: none; user-select: none;
+    display: flex; flex-direction: column; min-height: 100dvh;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  }
+  button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action: manipulation; }
+  header {
+    display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    border-bottom: 1px solid var(--line); background: var(--panel);
+  }
+  header .title { font-weight: 800; font-size: 18px; white-space: nowrap; }
+  header .date { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  header .sp { flex: 1; }
+  .sync { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ok); }
+  .dot.wait { background: var(--warn); }
+  .dot.off { background: var(--danger); }
+  main { flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 14px; min-height: 0; }
+  .hidden { display: none !important; }
+
+  /* 기록자 선택 */
+  .pick h2 { margin: 4px 0 2px; font-size: 22px; }
+  .pick .sub { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+  .names { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .names button {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 4px; font-size: 18px; font-weight: 700;
+  }
+  .names button:active { background: #2a313b; }
+  .names button.other { grid-column: 1 / -1; color: var(--muted); font-weight: 600; }
+  .other-box { display: flex; gap: 8px; margin-top: 10px; }
+  .other-box input {
+    flex: 1; min-width: 0; font: inherit; font-size: 18px; padding: 12px; border-radius: 12px;
+    border: 1px solid var(--line); background: #0c0f12; color: var(--text); -webkit-user-select: text; user-select: text;
+  }
+  .other-box button { background: var(--start); border-radius: 12px; padding: 0 18px; font-weight: 800; }
+
+  /* 기록 화면 */
+  .who { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--muted); }
+  .who b { color: var(--text); font-size: 17px; }
+  .who .chg { margin-left: auto; background: transparent; color: var(--muted); text-decoration: underline; font-size: 14px; padding: 6px 0; }
+  .qbar { display: flex; align-items: center; gap: 10px; }
+  .qbar .qname { font-size: 22px; font-weight: 800; }
+  .qbar .elapsed { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 18px; }
+  .qbar .end {
+    margin-left: auto; background: var(--end); border-radius: 10px; padding: 10px 14px; font-size: 15px; font-weight: 700;
+  }
+  .qbar .end.arm { background: var(--danger); }
+  .big {
+    flex: 1; min-height: 240px; border-radius: 28px; font-weight: 900; letter-spacing: 2px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    box-shadow: 0 8px 0 rgba(0,0,0,.35); transition: transform .05s, filter .05s;
+  }
+  .big:active { transform: translateY(4px); box-shadow: 0 4px 0 rgba(0,0,0,.35); }
+  .big .main { font-size: 64px; line-height: 1; }
+  .big .hint { font-size: 16px; font-weight: 600; letter-spacing: 0; opacity: .85; }
+  .big.start { background: var(--start); }
+  .big.start:active { background: var(--start-d); }
+  .big.goal { background: var(--goal); }
+  .big.goal:active, .big.goal.flash { background: var(--goal-d); filter: brightness(1.3); }
+  .log { max-height: 34vh; overflow-y: auto; border-top: 1px solid var(--line); padding-top: 6px; }
+  .log .row { display: flex; align-items: center; gap: 10px; padding: 7px 2px; border-bottom: 1px solid #20262e; font-size: 15px; }
+  .log .row .k { font-weight: 800; min-width: 54px; }
+  .log .row .t { font-variant-numeric: tabular-nums; }
+  .log .row .e { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; }
+  .log .row .st { font-size: 12px; color: var(--warn); }
+  .log .row .del {
+    margin-left: auto; background: transparent; border: 1px solid var(--line); color: var(--muted);
+    border-radius: 8px; padding: 4px 10px; font-size: 13px;
+  }
+  .log .row .del.arm { border-color: var(--danger); color: #fff; background: var(--danger); }
+  .log .empty { color: var(--muted); font-size: 14px; padding: 8px 2px; }
+  .others { color: var(--muted); font-size: 13px; }
+  .toast {
+    position: fixed; left: 50%; top: 18%; transform: translateX(-50%); background: rgba(0,0,0,.85);
+    padding: 14px 22px; border-radius: 14px; font-size: 20px; font-weight: 800; pointer-events: none;
+    opacity: 0; transition: opacity .15s;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <span class="title">골인 기록</span>
+  <span class="date" id="today"></span>
+  <span class="sp"></span>
+  <span class="sync"><span class="dot" id="dot"></span><span id="syncTxt">연결 확인 중</span></span>
+</header>
+
+<main>
+  <!-- 1. 기록자 선택 -->
+  <section class="pick hidden" id="vPick">
+    <h2>누가 기록하나요?</h2>
+    <div class="sub" id="rosterSub">명단 불러오는 중</div>
+    <div class="names" id="names"></div>
+    <div class="other-box hidden" id="otherBox">
+      <input id="otherName" maxlength="20" placeholder="이름 입력" autocomplete="off">
+      <button id="otherOk">확인</button>
+    </div>
+  </section>
+
+  <!-- 2. 기록 -->
+  <section class="hidden" id="vRec" style="flex:1;display:flex;flex-direction:column;gap:14px;min-height:0">
+    <div class="who">기록자 <b id="whoName"></b><button class="chg" id="chg">바꾸기</button></div>
+
+    <div class="qbar hidden" id="qbar">
+      <span class="qname" id="qname"></span>
+      <span class="elapsed" id="elapsed">00:00</span>
+      <button class="end" id="btnEnd">쿼터 종료</button>
+    </div>
+
+    <button class="big start" id="btnStart">
+      <span class="main">쿼터 시작</span>
+      <span class="hint" id="startHint">휘슬이 울리면 누르세요</span>
+    </button>
+
+    <button class="big goal hidden" id="btnGoal">
+      <span class="main">골!</span>
+      <span class="hint">공이 림을 통과하는 순간</span>
+    </button>
+
+    <div class="others" id="others"></div>
+    <div class="log" id="log"></div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const SUPABASE_URL = 'https://wfwzxnyelpbgjxlovjgo.supabase.co';
+  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indmd3p4bnllbHBiZ2p4bG92amdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNDM3NDcsImV4cCI6MjA3NTkxOTc0N30.STu6r2vK5ghEBXHXF_IYdJPsjaxc0efUEUn3pbSrAXM';
+  const HDR = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
+  const $ = id => document.getElementById(id);
+  const KIND = { goal: '골', q_start: '시작', q_end: '종료' };
+
+  // ---------- 저장 (localStorage 가 막혀도 페이지는 돈다) ----------
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+  const uuid = () => (crypto.randomUUID ? crypto.randomUUID() :
+    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));
+
+  const device = store.get('goal_device', null) || uuid();
+  store.set('goal_device', device);
+
+  // ---------- 날짜 · 시각 (한국 시간) ----------
+  const kst = ms => new Date(ms + 9 * 3600e3);
+  const kstDate = ms => kst(ms).toISOString().slice(0, 10);
+  const hms = ms => kst(ms).toISOString().slice(11, 19);
+  const mmss = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+  const WD = ['일', '월', '화', '수', '목', '금', '토'];
+
+  // ---------- 시계 보정 (서버 - 폰) ----------
+  let offset = store.get('goal_offset', { ms: 0, rtt: null }).ms, rtt = null;
+  const serverNow = () => Date.now() + offset;
+  async function syncClock() {
+    let best = null;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const t0 = Date.now();
+        const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/ercc_server_now', { method: 'POST', headers: HDR, body: '{}' });
+        const t1 = Date.now();
+        if (!r.ok) continue;
+        const s = await r.json();
+        const cand = { ms: Math.round(s - (t0 + t1) / 2), rtt: t1 - t0 };
+        if (!best || cand.rtt < best.rtt) best = cand;
+      } catch {}
+    }
+    if (best) { offset = best.ms; rtt = best.rtt; store.set('goal_offset', best); online(true); }
+    else online(false);
+  }
+
+  // ---------- 상태 ----------
+  // st = { date, recorder, other, running, q, qStart, taps: [{uuid, kind, at, q, sent, del}] }
+  let st = store.get('goal_state', null);
+  const today = kstDate(serverNow());
+  if (!st || st.date !== today) st = { date: today, recorder: st && st.recorder, other: st && st.other, running: false, q: 0, qStart: null, taps: [] };
+  const save = () => store.set('goal_state', st);
+  save();
+
+  // ---------- 보내기 줄 (끊겨도 쌓아 뒀다가 다시 보낸다) ----------
+  let queue = store.get('goal_queue', []);
+  const saveQ = () => store.set('goal_queue', queue);
+  let flushing = false;
+  async function rpc(fn, body) {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: HDR, body: JSON.stringify(body) });
+    if (!r.ok) { const e = new Error(await r.text()); e.status = r.status; throw e; }
+    return r.json();
+  }
+  async function flush() {
+    if (flushing || !queue.length) { paintSync(); return; }
+    flushing = true;
+    try {
+      while (queue.length) {
+        const op = queue[0];
+        try {
+          if (op.op === 'tap') {
+            await rpc('ercc_goal_tap', {
+              p_tap_uuid: op.uuid, p_device: device, p_kind: op.kind, p_recorder: op.recorder, p_other: !!op.other,
+              p_client_ms: op.client, p_offset_ms: op.offset, p_rtt_ms: op.rtt, p_ua: navigator.userAgent });
+            const t = st.taps.find(x => x.uuid === op.uuid); if (t) t.sent = true;
+          } else if (op.op === 'undo') {
+            await rpc('ercc_goal_undo', { p_tap_uuid: op.uuid, p_device: device });
+          }
+          queue.shift(); saveQ(); save(); online(true);
+        } catch (e) {
+          if (e.status === 400) { queue.shift(); saveQ(); continue; }   // 서버가 거절한 건 다시 보내도 같다
+          online(false); break;
+        }
+      }
+    } finally { flushing = false; paintLog(); paintSync(); }
+  }
+  setInterval(flush, 3000);
+  addEventListener('online', flush);
+
+  let isOnline = null;
+  function online(v) { isOnline = v; paintSync(); }
+  function paintSync() {
+    const dot = $('dot'), txt = $('syncTxt');
+    const n = queue.length;
+    if (isOnline === false) { dot.className = 'dot off'; txt.textContent = n ? `연결 끊김 · 대기 ${n}` : '연결 끊김'; }
+    else if (n) { dot.className = 'dot wait'; txt.textContent = `보내는 중 ${n}`; }
+    else { dot.className = 'dot'; txt.textContent = isOnline ? '저장됨' : '연결 확인 중'; }
+  }
+
+  // ---------- 기록 ----------
+  function record(kind) {
+    const client = Date.now();
+    const t = { uuid: uuid(), kind, at: client + offset, q: st.q, sent: false, del: false };
+    st.taps.push(t); save();
+    queue.push({ op: 'tap', uuid: t.uuid, kind, recorder: st.recorder, other: st.other, client, offset, rtt });
+    saveQ(); flush();
+    return t;
+  }
+  function removeTap(t) {
+    t.del = true; save();
+    const i = queue.findIndex(o => o.op === 'tap' && o.uuid === t.uuid);
+    if (i >= 0) { queue.splice(i, 1); }               // 아직 안 보낸 것은 줄에서 빼기만
+    else queue.push({ op: 'undo', uuid: t.uuid });
+    saveQ(); flush();
+  }
+
+  // ---------- 화면 ----------
+  let toastTimer;
+  function toast(msg) {
+    const el = $('toast'); el.textContent = msg; el.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 900);
+  }
+  function buzz(p) { try { navigator.vibrate && navigator.vibrate(p); } catch {} }
+
+  function show() {
+    const d = kst(serverNow());
+    $('today').textContent = `${String(d.getUTCFullYear()).slice(2)}.${d.getUTCMonth() + 1}.${d.getUTCDate()} (${WD[d.getUTCDay()]})`;
+    $('vPick').classList.toggle('hidden', !!st.recorder);
+    $('vRec').classList.toggle('hidden', !st.recorder);
+    if (!st.recorder) { loadRoster(); return; }
+    $('whoName').textContent = st.recorder + (st.other ? ' (기타)' : '');
+    $('qbar').classList.toggle('hidden', !st.running);
+    $('btnStart').classList.toggle('hidden', st.running);
+    $('btnGoal').classList.toggle('hidden', !st.running);
+    $('qname').textContent = `${st.q}번째 쿼터`;
+    $('startHint').textContent = `${st.q + 1}번째 쿼터 · 휘슬이 울리면 누르세요`;
+    disarmEnd();
+    paintLog(); tick(); wake();
+  }
+
+  function paintLog() {
+    const el = $('log');
+    if (!st.recorder) return;
+    // 진행 중이면 이번 쿼터만, 아니면 오늘 전부 (최근 것이 위)
+    const rows = st.taps.filter(t => !t.del && (!st.running || t.q === st.q)).slice().reverse();
+    const goals = st.taps.filter(t => !t.del && t.kind === 'goal');
+    if (!rows.length) { el.innerHTML = `<div class="empty">${st.running ? '이번 쿼터 골 기록 없음' : '오늘 기록 없음'}</div>`; return; }
+    el.innerHTML = '';
+    rows.forEach(t => {
+      const qs = st.taps.find(x => !x.del && x.kind === 'q_start' && x.q === t.q);
+      const n = t.kind === 'goal' ? goals.filter(g => g.q === t.q && g.at <= t.at).length : 0;
+      const row = document.createElement('div'); row.className = 'row';
+      row.innerHTML =
+        `<span class="k">${t.kind === 'goal' ? '골 ' + n : 'Q' + t.q + ' ' + KIND[t.kind]}</span>` +
+        `<span class="t">${hms(t.at)}</span>` +
+        (qs && t.kind !== 'q_start' ? `<span class="e">+${mmss(t.at - qs.at)}</span>` : '') +
+        (t.sent ? '' : '<span class="st">대기</span>');
+      // 골과 진행 중 쿼터의 시작만 지울 수 있다 (시작을 잘못 눌렀을 때)
+      if (t.kind === 'goal' || (t.kind === 'q_start' && st.running && t.q === st.q)) {
+        const b = document.createElement('button'); b.className = 'del'; b.textContent = '삭제';
+        b.onclick = () => {
+          if (!b.classList.contains('arm')) {
+            b.classList.add('arm'); b.textContent = '삭제?';
+            setTimeout(() => { if (b.isConnected) { b.classList.remove('arm'); b.textContent = '삭제'; } }, 3000);
+            return;
+          }
+          removeTap(t);
+          if (t.kind === 'q_start') {
+            st.taps.filter(x => x.q === t.q && !x.del).forEach(removeTap);
+            st.running = false; st.q -= 1; st.qStart = null; save(); toast('쿼터 시작 취소'); show(); return;
+          }
+          toast('골 삭제'); paintLog();
+        };
+        row.appendChild(b);
+      }
+      el.appendChild(row);
+    });
+  }
+
+  function tick() {
+    if (st.running && st.qStart) $('elapsed').textContent = mmss(serverNow() - st.qStart);
+  }
+  setInterval(tick, 500);
+
+  // 화면 꺼짐 막기 (쿼터 진행 중)
+  let lock = null;
+  async function wake() {
+    try {
+      if (st.running && !lock && 'wakeLock' in navigator) { lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => lock = null); }
+      if (!st.running && lock) { await lock.release(); lock = null; }
+    } catch {}
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { wake(); syncClock().then(flush); } });
+
+  // ---------- 버튼 ----------
+  $('btnStart').onclick = () => {
+    st.q += 1; st.running = true;
+    const t = record('q_start'); st.qStart = t.at; save();
+    buzz(80); toast(`${st.q}번째 쿼터 시작`); show();
+  };
+  let lastGoal = 0;
+  $('btnGoal').onclick = () => {
+    const now = Date.now();
+    if (now - lastGoal < 800) return;              // 손이 두 번 닿은 것
+    lastGoal = now;
+    record('goal');
+    const n = st.taps.filter(t => !t.del && t.kind === 'goal' && t.q === st.q).length;
+    buzz(60); toast(`골 ${n}`);
+    const b = $('btnGoal'); b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 150);
+    paintLog();
+  };
+  let endTimer;
+  function disarmEnd() { const b = $('btnEnd'); b.classList.remove('arm'); b.textContent = '쿼터 종료'; clearTimeout(endTimer); }
+  $('btnEnd').onclick = () => {
+    const b = $('btnEnd');
+    if (!b.classList.contains('arm')) {
+      b.classList.add('arm'); b.textContent = '종료 확인'; endTimer = setTimeout(disarmEnd, 3000); return;
+    }
+    record('q_end'); st.running = false; st.qStart = null; save();
+    buzz([60, 60, 60]); toast(`${st.q}번째 쿼터 종료`); show();
+  };
+  $('chg').onclick = () => {
+    if (st.running) { toast('쿼터 종료 뒤에 바꿀 수 있어요'); return; }
+    st.recorder = null; st.other = false; save(); show();
+  };
+
+  // ---------- 명단 ----------
+  let rosterLoaded = false;
+  async function loadRoster() {
+    if (rosterLoaded) return;
+    const box = $('names'); box.innerHTML = '';
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/ercc_roster?select=game_date&game_date=lte.${today}&order=game_date.desc&limit=1`, { headers: HDR });
+      const last = (await r.json())[0];
+      let names = [];
+      if (last) {
+        const r2 = await fetch(`${SUPABASE_URL}/rest/v1/ercc_roster?select=name&game_date=eq.${last.game_date}`, { headers: HDR });
+        names = (await r2.json()).map(x => x.name).sort((a, b) => a.localeCompare(b, 'ko'));
+        const [y, m, d] = last.game_date.split('-');
+        $('rosterSub').textContent = `${y.slice(2)}.${+m}.${+d} 출전 명단 · 가나다순`;
+        store.set('goal_roster', { date: last.game_date, names });
+      }
+      rosterLoaded = true; paintNames(names);
+    } catch {
+      const c = store.get('goal_roster', null);   // 연결이 안 되면 지난번 받아 둔 명단
+      $('rosterSub').textContent = c ? '연결 끊김 · 지난번 받은 명단' : '연결 끊김 · 「기타」로 이름을 넣어 주세요';
+      paintNames(c ? c.names : []);
+    }
+  }
+  function paintNames(names) {
+    const box = $('names'); box.innerHTML = '';
+    names.forEach(n => {
+      const b = document.createElement('button'); b.textContent = n;
+      b.onclick = () => { st.recorder = n; st.other = false; save(); show(); };
+      box.appendChild(b);
+    });
+    const o = document.createElement('button'); o.className = 'other'; o.textContent = '기타 (명단에 없음 · 직접 입력)';
+    o.onclick = () => { $('otherBox').classList.remove('hidden'); $('otherName').focus(); };
+    box.appendChild(o);
+  }
+  function takeOther() {
+    const v = $('otherName').value.trim();
+    if (!v) { $('otherName').focus(); return; }
+    st.recorder = v.slice(0, 20); st.other = true; save(); show();
+  }
+  $('otherOk').onclick = takeOther;
+  $('otherName').addEventListener('keydown', e => { if (e.key === 'Enter') takeOther(); });
+
+  // ---------- 다른 기록자 ----------
+  async function others() {
+    if (!st.recorder) return;
+    try {
+      const list = await rpc('ercc_goal_list', { p_date: today, p_device: device });
+      const names = [...new Set(list.filter(x => !x.mine).map(x => x.recorder))];
+      $('others').textContent = names.length ? `함께 기록 중: ${names.join(', ')}` : '';
+      online(true);
+    } catch { online(false); }
+  }
+  setInterval(others, 20000);
+  setInterval(syncClock, 5 * 60e3);
+
+  show();
+  syncClock().then(() => { flush(); others(); });
+})();
+</script>
+</body>
+</html>
