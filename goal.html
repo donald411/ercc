@@ -38,8 +38,8 @@
   /* 기록자 선택 */
   .pick h2 { margin: 2px 0; font-size: 23px; font-weight: 900; }
   .pick .sub { color: var(--muted); font-size: 14px; margin-bottom: 10px; }
-  .names { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .names button { padding: 13px 4px; font-size: 18px; font-weight: 800; box-shadow: 3px 3px 0 var(--ink); }
+  .names { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+  .names button { padding: 12px 2px; font-size: 17px; font-weight: 800; box-shadow: 3px 3px 0 var(--ink); }
   .names button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
   .names button.other { grid-column: 1 / -1; font-weight: 700; font-size: 15px; background: var(--bg); }
   .other-box { display: flex; gap: 8px; margin-top: 10px; }
@@ -589,18 +589,20 @@
     if (rosterLoaded) { paintNames(store.get('goal_roster', { names: [] }).names); return; }
     const box = $('names'); box.innerHTML = '';
     try {
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/ercc_roster?select=game_date&game_date=lte.${today}&order=game_date.desc&limit=1`, { headers: HDR });
-      const last = (await r.json())[0];
-      let names = [], teams = [];
-      if (last) {
-        const r2 = await fetch(`${SUPABASE_URL}/rest/v1/ercc_roster?select=name,team&game_date=eq.${last.game_date}`, { headers: HDR });
-        const rows = await r2.json();
-        names = rows.map(x => x.name).sort((a, b) => a.localeCompare(b, 'ko'));
-        teams = [...new Set(rows.map(x => TEAM_OF[(x.team || '').trim()]).filter(Boolean))];
-        const [y, m, d] = last.game_date.split('-');
-        $('rosterSub').textContent = `${y.slice(2)}.${+m}.${+d} 출전 명단 · 가나다순`;
-        store.set('goal_roster', { date: last.game_date, names, teams });
-      }
+      // 기록자 = 전체 멤버(ercc_members) + 출전 명단에 한 번이라도 나온 이름 · 가나다순 (사용자 2026-11-24 「전체 명단을 다 뿌려줘」)
+      const [rm, rr] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/ercc_members?select=name`, { headers: HDR }),
+        fetch(`${SUPABASE_URL}/rest/v1/ercc_roster?select=name,team,game_date&game_date=lte.${today}&order=game_date.desc&limit=2000`, { headers: HDR }),
+      ]);
+      if (!rm.ok || !rr.ok) throw new Error('roster');
+      const members = await rm.json(), roster = await rr.json();
+      const names = [...new Set([...members.map(x => x.name), ...roster.map(x => x.name)].map(n => (n || '').trim()).filter(Boolean))]
+        .sort((x, y) => x.localeCompare(y, 'ko'));
+      // 왼쪽/오른쪽 팀 기본값은 가장 최근 출전 명단의 팀 칸에서
+      const lastDate = roster.length ? roster[0].game_date : null;
+      const teams = [...new Set(roster.filter(x => x.game_date === lastDate).map(x => TEAM_OF[(x.team || '').trim()]).filter(Boolean))];
+      $('rosterSub').textContent = `전체 ${names.length}명 · 가나다순`;
+      store.set('goal_roster', { date: lastDate, names, teams });
       rosterLoaded = true; paintNames(names);
     } catch {
       const c = store.get('goal_roster', null);   // 연결이 안 되면 지난번 받아 둔 명단
