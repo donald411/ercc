@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex">
 <title>골인 기록 | 으랏차차</title>
 <style>
-  /* 2026-11-24 개편: 팀 색 버튼 · 누른 뒤 7초 동안 득점 종류 고치기 · 쿼터 선택 없음(영상 촬영 시각으로 맞춘다) · 밝은 네오 브루탈리즘 */
+  /* 2026-11-24 개편: 팀 색 버튼 · 누른 뒤 10초 동안 득점 종류 고치기 · 쿼터 선택 없음(영상 촬영 시각으로 맞춘다) · 밝은 네오 브루탈리즘 */
   :root {
     color-scheme: light;
     --bg: #F4F0E6; --card: #fff; --ink: #111; --muted: #5b5b5b; --line: #cfc8b8;
@@ -106,7 +106,7 @@
   .gbtn .sm { font-size: 13px; font-weight: 700; opacity: .8; }
   .gbtn.BLK { background: var(--BLK); color: var(--BLK-t); } .gbtn.WHT { background: var(--WHT); color: var(--WHT-t); } .gbtn.GRY { background: var(--GRY); color: var(--GRY-t); }
 
-  /* 누른 뒤 7초 고치기 */
+  /* 누른 뒤 10초 고치기 */
   .amend { border: 3px solid var(--ink); background: var(--yel); padding: 8px 10px; display: flex; flex-direction: column; gap: 7px; box-shadow: 4px 4px 0 var(--ink); }
   .amend .head { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 17px; }
   .amend .head .left { margin-left: auto; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -220,7 +220,7 @@
   const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indmd3p4bnllbHBiZ2p4bG92amdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNDM3NDcsImV4cCI6MjA3NTkxOTc0N30.STu6r2vK5ghEBXHXF_IYdJPsjaxc0efUEUn3pbSrAXM';
   const HDR = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
   const $ = id => document.getElementById(id);
-  const AMEND_MS = 7000;                                     // 누른 뒤 득점 종류를 고칠 수 있는 시간 (사용자 2026-11-24 「7초 정도」)
+  const AMEND_MS = 10000;                                    // 누른 뒤 득점 종류를 고칠 수 있는 시간 (사용자 2026-11-24 「7초」 → 「10초로」)
   const ALL_TEAMS = ['BLK', 'WHT', 'GRY'];
   const TEAM_OF = { '팀블랙': 'BLK', '팀화이트': 'WHT', '팀그레이': 'GRY', '블랙': 'BLK', '화이트': 'WHT', '그레이': 'GRY' };
   // 득점 종류 = 골인 체크 툴 마크의 kind 와 같은 값
@@ -303,7 +303,7 @@
         try {
           if (op.op === 'tap') {
             const t = st.taps.find(x => x.uuid === op.uuid);
-            // 아직 안 보낸 탭은 보내는 순간의 팀 · 종류로 보낸다 (7초 고치기가 끝나기 전에 보내도 뒤에 edit 가 따라간다)
+            // 아직 안 보낸 탭은 보내는 순간의 팀 · 종류로 보낸다 (10초 고치기가 끝나기 전에 보내도 뒤에 edit 가 따라간다)
             await rpc('ercc_goal_tap', {
               p_tap_uuid: op.uuid, p_device: device, p_kind: op.kind || 'goal', p_recorder: op.recorder, p_other: !!op.other,
               p_client_ms: op.client, p_offset_ms: op.offset, p_rtt_ms: op.rtt, p_ua: navigator.userAgent,
@@ -504,7 +504,8 @@
     });
   }
 
-  // ---------- 누른 뒤 7초 고치기 ----------
+  // ---------- 누른 뒤 10초 고치기 ----------
+  // 그 사이 다른 골 버튼(어느 팀이든)을 누르면 새 득점으로 저장하고 고치기 줄은 새 골로 넘어간다 · 앞 골은 아래 기록 줄에서 고친다
   let amendT = null, amendEnd = 0, amendTick = null;
   function openAmend(t) {
     amendT = t; amendEnd = Date.now() + AMEND_MS;
@@ -529,7 +530,7 @@
   }
   function amend(fn) {
     const t = amendT; if (!t) return;
-    fn(t); amendEnd = Date.now() + AMEND_MS;          // 고칠 때마다 7초를 다시 준다
+    fn(t); amendEnd = Date.now() + AMEND_MS;          // 고칠 때마다 10초를 다시 준다
     editTap(t); paintAmend(); paintLog(); buzz(30);
   }
   // 3점: 2 ↔ 3 (앤드원이면 2+1 ↔ 3+1)
