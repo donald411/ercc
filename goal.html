@@ -109,11 +109,13 @@
   /* 누른 뒤 10초 고치기 */
   .amend { border: 3px solid var(--ink); background: var(--yel); padding: 8px 10px; display: flex; flex-direction: column; gap: 7px; box-shadow: 4px 4px 0 var(--ink); }
   .amend .head { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 17px; }
+  .amend .head .ok2 { padding: 7px 12px; font-size: 16px; font-weight: 900; background: var(--mint); box-shadow: 2px 2px 0 var(--ink); white-space: nowrap; }
   .amend .head .left { margin-left: auto; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .amend .timer { height: 6px; background: var(--ink); transform-origin: left; }
   .amend .opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
   .amend .opts button { padding: 11px 0; font-size: 16px; font-weight: 900; }
   .amend .opts button.on { background: var(--ink); color: #fff; }
+  .amend .opts button small { display: block; font-size: 12px; font-weight: 800; line-height: 1.1; }
   .amend .opts button.cancel { background: var(--red); }
 
   /* 기록 줄 */
@@ -183,12 +185,12 @@
     <div class="panel setup hidden" id="setupRec"></div>
     <div class="goals" id="goals"></div>
     <div class="amend hidden" id="amend">
-      <div class="head"><span id="amTeam" class="tchip"></span><span id="amText"></span><span class="left" id="amLeft"></span></div>
+      <div class="head"><span id="amTeam" class="tchip"></span><span id="amText"></span><button class="ok2" id="am2">2점 확정</button><span class="left" id="amLeft"></span></div>
       <div class="timer" id="amTimer"></div>
       <div class="opts">
         <button id="am3">3점</button>
         <button id="amFT">자유투</button>
-        <button id="am1">+1 앤드원</button>
+        <button id="am1">+1<small>앤드원</small></button>
         <button id="amX" class="cancel">취소</button>
       </div>
     </div>
@@ -539,6 +541,12 @@
   $('amFT').onclick = () => amend(t => { if (t.sk === 'FT') t.ft = (t.ft || 1) % 3 + 1; else { t.sk = 'FT'; t.ft = 1; } });
   // +1 앤드원: 2 ↔ 2+1 · 3 ↔ 3+1
   $('am1').onclick = () => amend(t => { t.sk = { '2': '2+1', '2+1': '2', '3': '3+1', '3+1': '3', 'FT': '2+1' }[t.sk || '2']; t.ft = null; });
+  // 2점 확정: 2점으로 두고 고치기 줄을 바로 닫는다 (사용자 2026-11-24)
+  $('am2').onclick = () => {
+    const t = amendT; if (!t) return;
+    if (t.sk !== '2' || t.ft) { t.sk = '2'; t.ft = null; editTap(t); paintLog(); }
+    closeAmend(); buzz(30); toast(`${t.team} 2점`);
+  };
   $('amX').onclick = () => { const t = amendT; if (!t) return; removeTap(t); closeAmend(); toast('취소함'); paintLog(); };
 
   function tick() {
