@@ -18,7 +18,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deploy1.outputs.page_url || steps.deploy2.outputs.page_url || steps.deploy3.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,6 +32,31 @@ jobs:
         with:
           path: '.'
 
+      # 2026-11-24: 업로드 직후 deploy-pages 가 「No artifacts named github-pages」로 간헐 실패한다
+      # (업로드는 성공 · 조회가 너무 빨라 못 찾는 것으로 보임) → 잠깐 기다렸다가 배포하고, 실패하면 두 번 더 다시 한다
+      - name: Wait for artifact
+        run: sleep 15
+
       - name: Deploy to GitHub Pages
-        id: deployment
+        id: deploy1
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+
+      - name: Wait before retry
+        if: steps.deploy1.outcome == 'failure'
+        run: sleep 45
+
+      - name: Deploy to GitHub Pages (retry 1)
+        id: deploy2
+        if: steps.deploy1.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+
+      - name: Wait before retry 2
+        if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure'
+        run: sleep 90
+
+      - name: Deploy to GitHub Pages (retry 2)
+        id: deploy3
+        if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure'
         uses: actions/deploy-pages@v5
