@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>으랏차차 농구대전 영상</title>
+<meta property="og:title" content="으랏차차 농구대전 영상">
+<meta property="og:description" content="누르면 유튜브 앱에서 열립니다">
+<meta name="robots" content="noindex">
+<style>
+  /* 카톡에서 누른 유튜브 링크를 유튜브 앱으로 넘기는 중간 페이지 (2026-11-24) · 밝은 바탕 네오 브루탈리즘 */
+  :root { color-scheme: light; --bg:#F4F0E6; --ink:#111; --yel:#FFD338; --red:#FF6B57; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 "Pretendard Variable","Pretendard",system-ui,sans-serif; }
+  main { max-width:460px; margin:0 auto; padding:40px max(18px, env(safe-area-inset-left, 0px)) 40px; display:grid; gap:16px; }
+  h1 { font-size:22px; margin:0; }
+  .card { background:#fff; border:3px solid var(--ink); box-shadow:6px 6px 0 var(--ink); padding:16px 18px; }
+  a.btn { display:block; text-align:center; text-decoration:none; color:var(--ink); font-weight:800; font-size:18px;
+          background:var(--red); border:3px solid var(--ink); box-shadow:5px 5px 0 var(--ink); padding:14px 12px; }
+  a.btn.sub { background:var(--yel); font-size:15px; font-weight:700; }
+  .dim { color:#555; font-size:14px; }
+  .err { color:#b00; font-weight:700; }
+</style>
+</head>
+<body>
+<main>
+  <h1>유튜브 앱으로 여는 중…</h1>
+  <div class="card dim" id="msg">잠시 뒤에도 안 열리면 아래 단추를 눌러 주세요.</div>
+  <a class="btn" id="app" href="#">유튜브 앱에서 보기</a>
+  <a class="btn sub" id="web" href="#">브라우저에서 보기</a>
+</main>
+<script>
+// 사용법: yt.html?v=<영상 ID>[&t=<초>]   (또는 ?u=<유튜브 주소>)
+// 카톡 앱 안 브라우저는 유튜브를 모바일 웹으로 띄운다 → 안드로이드는 intent 로 유튜브 앱, 아이폰은 youtube:// 로 앱 (안 되면 웹)
+(() => {
+  const q = new URLSearchParams(location.search);
+  let id = q.get('v') || '', t = q.get('t') || '';
+  const u = q.get('u');
+  if (!id && u) {
+    const m = u.match(/(?:youtu\.be\/|[?&]v=|\/shorts\/|\/live\/)([\w-]{11})/);
+    if (m) id = m[1];
+    const mt = u.match(/[?&]t=(\d+)/); if (mt && !t) t = mt[1];
+  }
+  if (!/^[\w-]{11}$/.test(id)) { document.getElementById('msg').innerHTML = '<span class="err">영상 주소가 없어요.</span> 링크를 다시 확인해 주세요.'; document.getElementById('app').hidden = true; document.getElementById('web').hidden = true; return; }
+  t = /^\d+$/.test(t) ? t : '';
+  const web = 'https://www.youtube.com/watch?v=' + id + (t ? '&t=' + t + 's' : '');
+  const ua = navigator.userAgent;
+  const android = /Android/i.test(ua), ios = /iPhone|iPad|iPod/i.test(ua);
+  let app = web;
+  if (android) app = 'intent://www.youtube.com/watch?v=' + id + (t ? '&t=' + t : '') + '#Intent;scheme=https;package=com.google.android.youtube;S.browser_fallback_url=' + encodeURIComponent(web) + ';end';
+  else if (ios) app = 'youtube://www.youtube.com/watch?v=' + id + (t ? '&t=' + t : '');
+  document.getElementById('app').href = app;
+  document.getElementById('web').href = web;
+  if (!android && !ios) { location.replace(web); return; }  // PC = 바로 유튜브
+  location.href = app;
+  if (ios) setTimeout(() => { if (!document.hidden) document.getElementById('msg').textContent = '앱이 안 열렸으면 「유튜브 앱에서 보기」를 눌러 주세요. 앱이 없으면 「브라우저에서 보기」.'; }, 1500);
+})();
+</script>
+</body>
+</html>
