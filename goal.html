@@ -3,95 +3,139 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#111418">
+<meta name="theme-color" content="#F4F0E6">
 <meta name="robots" content="noindex">
 <title>골인 기록 | 으랏차차</title>
 <style>
+  /* 2026-11-24 개편: 팀 색 버튼 · 누른 뒤 7초 동안 득점 종류 고치기 · 쿼터 선택 없음(영상 촬영 시각으로 맞춘다) · 밝은 네오 브루탈리즘 */
   :root {
-    --bg: #111418; --panel: #1b2027; --line: #2c333d; --text: #f2f4f7; --muted: #9aa4b1;
-    --start: #1f9d55; --start-d: #15803d; --goal: #f2542d; --goal-d: #c43d1c;
-    --end: #3b4452; --warn: #f5a524; --ok: #34c77b; --danger: #ef4444;
+    color-scheme: light;
+    --bg: #F4F0E6; --card: #fff; --ink: #111; --muted: #5b5b5b; --line: #cfc8b8;
+    --yel: #FFD338; --mint: #45E0B4; --red: #FF6B57; --vio: #B59CFF;
+    --BLK: #141414; --BLK-t: #fff; --WHT: #ffffff; --WHT-t: #111; --GRY: #6E747C; --GRY-t: #fff;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕", sans-serif;
+    font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
     font-size: 17px; touch-action: manipulation; -webkit-user-select: none; user-select: none;
     display: flex; flex-direction: column; min-height: 100dvh;
     padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
   }
-  button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action: manipulation; }
-  header {
-    display: flex; align-items: center; gap: 10px; padding: 12px 16px;
-    border-bottom: 1px solid var(--line); background: var(--panel);
-  }
-  header .title { font-weight: 800; font-size: 18px; white-space: nowrap; }
-  header .date { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; background: var(--card); border: 3px solid var(--ink); }
+  header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 3px solid var(--ink); background: var(--yel); }
+  header .title { font-weight: 900; font-size: 19px; white-space: nowrap; }
+  header .date { font-size: 14px; font-weight: 700; white-space: nowrap; }
   header .sp { flex: 1; }
-  .sync { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); white-space: nowrap; }
-  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ok); }
-  .dot.wait { background: var(--warn); }
-  .dot.off { background: var(--danger); }
-  main { flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 14px; min-height: 0; }
+  .sync { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: #1fbf73; border: 2px solid var(--ink); }
+  .dot.wait { background: #ff9f1c; }
+  .dot.off { background: var(--red); }
+  main { flex: 1; display: flex; flex-direction: column; padding: 14px; gap: 12px; min-height: 0; }
   .hidden { display: none !important; }
+  .shadow { box-shadow: 5px 5px 0 var(--ink); }
 
   /* 기록자 선택 */
-  .pick h2 { margin: 4px 0 2px; font-size: 22px; }
-  .pick .sub { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+  .pick h2 { margin: 2px 0; font-size: 23px; font-weight: 900; }
+  .pick .sub { color: var(--muted); font-size: 14px; margin-bottom: 10px; }
   .names { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .names button {
-    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
-    padding: 14px 4px; font-size: 18px; font-weight: 700;
-  }
-  .names button:active { background: #2a313b; }
-  .names button.other { grid-column: 1 / -1; color: var(--muted); font-weight: 600; }
+  .names button { padding: 13px 4px; font-size: 18px; font-weight: 800; box-shadow: 3px 3px 0 var(--ink); }
+  .names button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .names button.other { grid-column: 1 / -1; font-weight: 700; font-size: 15px; background: var(--bg); }
   .other-box { display: flex; gap: 8px; margin-top: 10px; }
-  .other-box input {
-    flex: 1; min-width: 0; font: inherit; font-size: 18px; padding: 12px; border-radius: 12px;
-    border: 1px solid var(--line); background: #0c0f12; color: var(--text); -webkit-user-select: text; user-select: text;
+  .other-box input { flex: 1; min-width: 0; font: inherit; font-size: 18px; padding: 12px; border: 3px solid var(--ink); background: #fff; color: var(--ink); -webkit-user-select: text; user-select: text; }
+  .other-box button { background: var(--mint); padding: 0 18px; font-weight: 900; }
+
+  /* 공통 */
+  .who { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+  .who b { font-size: 17px; }
+  .who .chg { margin-left: auto; border: 0; background: transparent; text-decoration: underline; font-size: 14px; padding: 6px 0; color: var(--muted); }
+  .tchip { display: inline-block; font-weight: 900; font-size: 13px; padding: 1px 7px; border: 2px solid var(--ink); letter-spacing: .5px; }
+  .tchip.BLK { background: var(--BLK); color: var(--BLK-t); } .tchip.WHT { background: var(--WHT); color: var(--WHT-t); } .tchip.GRY { background: var(--GRY); color: var(--GRY-t); }
+
+  /* 자리 · 좌우 팀 설정 (준비 화면 · 기록 중 「바꾸기」) */
+  .setup { display: flex; flex-direction: column; gap: 10px; }
+  .setup .lbl { font-weight: 900; font-size: 15px; }
+  .setup .help { font-size: 13px; color: var(--muted); }
+  .spots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .spots button { padding: 10px 4px; font-size: 16px; font-weight: 900; line-height: 1.25; box-shadow: none; opacity: .45; }
+  .spots button small { display: block; font-size: 12px; font-weight: 700; }
+  .spots button.on { opacity: 1; background: var(--vio); box-shadow: 3px 3px 0 var(--ink); }
+  .spots .unk { grid-column: 1 / -1; padding: 5px; font-size: 13px; font-weight: 700; }
+  .spots .unk.on { background: #e9e5da; }
+  .sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .sides .col { display: flex; flex-direction: column; gap: 6px; }
+  .sides .col > span { font-weight: 900; font-size: 15px; }
+  .sides .col:last-child > span { text-align: right; }
+  .sides button { padding: 9px 0; font-size: 19px; font-weight: 900; letter-spacing: 1px; opacity: .3; box-shadow: none; }
+  .sides button.on { opacity: 1; box-shadow: 3px 3px 0 var(--ink); }
+  .sides .BLK { background: var(--BLK); color: var(--BLK-t); } .sides .WHT { background: var(--WHT); color: var(--WHT-t); } .sides .GRY { background: var(--GRY); color: var(--GRY-t); }
+  .panel { border: 3px solid var(--ink); background: var(--card); padding: 10px; box-shadow: 4px 4px 0 var(--ink); }
+  .panel .done { margin-top: 10px; width: 100%; padding: 10px; font-weight: 900; background: var(--mint); }
+  .cur { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 800; flex-wrap: wrap; }
+  .cur .sp { flex: 1; }
+  .cur button { padding: 6px 10px; font-size: 14px; font-weight: 800; border-width: 2px; box-shadow: 2px 2px 0 var(--ink); }
+  .cur button.arm { background: var(--yel); }
+  .big {
+    flex: 1; min-height: 200px; font-weight: 900; letter-spacing: 1px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; box-shadow: 6px 6px 0 var(--ink);
   }
-  .other-box button { background: var(--start); border-radius: 12px; padding: 0 18px; font-weight: 800; }
+  .big:active { transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--ink); }
+  .big .main { font-size: 52px; line-height: 1.05; }
+  .big .hint { font-size: 15px; font-weight: 700; letter-spacing: 0; }
+  .big.start { background: var(--mint); }
 
   /* 기록 화면 */
-  .who { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--muted); }
-  .who b { color: var(--text); font-size: 17px; }
-  .who .chg { margin-left: auto; background: transparent; color: var(--muted); text-decoration: underline; font-size: 14px; padding: 6px 0; }
-  .qbar { display: flex; align-items: center; gap: 10px; }
-  .qbar .qname { font-size: 22px; font-weight: 800; }
-  .qbar .elapsed { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 18px; }
-  .qbar .end {
-    margin-left: auto; background: var(--end); border-radius: 10px; padding: 10px 14px; font-size: 15px; font-weight: 700;
-  }
-  .qbar .end.arm { background: var(--danger); }
-  .big {
-    flex: 1; min-height: 240px; border-radius: 28px; font-weight: 900; letter-spacing: 2px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-    box-shadow: 0 8px 0 rgba(0,0,0,.35); transition: transform .05s, filter .05s;
-  }
-  .big:active { transform: translateY(4px); box-shadow: 0 4px 0 rgba(0,0,0,.35); }
-  .big .main { font-size: 64px; line-height: 1; }
-  .big .hint { font-size: 16px; font-weight: 600; letter-spacing: 0; opacity: .85; }
-  .big.start { background: var(--start); }
-  .big.start:active { background: var(--start-d); }
-  .big.goal { background: var(--goal); }
-  .big.goal:active, .big.goal.flash { background: var(--goal-d); filter: brightness(1.3); }
-  .log { max-height: 34vh; overflow-y: auto; border-top: 1px solid var(--line); padding-top: 6px; }
-  .log .row { display: flex; align-items: center; gap: 10px; padding: 7px 2px; border-bottom: 1px solid #20262e; font-size: 15px; }
-  .log .row .k { font-weight: 800; min-width: 54px; }
+  .bar { display: flex; align-items: center; gap: 10px; }
+  .bar .rec { font-weight: 900; font-size: 18px; display: flex; align-items: center; gap: 6px; }
+  .bar .rec::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid var(--ink); animation: blink 1.4s infinite; }
+  @keyframes blink { 50% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) { .bar .rec::before { animation: none; } }
+  .bar .elapsed { font-variant-numeric: tabular-nums; font-weight: 800; background: var(--ink); color: #fff; padding: 1px 8px; }
+  .bar .cnt { font-size: 14px; font-weight: 700; color: var(--muted); }
+  .bar .end { margin-left: auto; padding: 8px 12px; font-size: 15px; font-weight: 800; box-shadow: 3px 3px 0 var(--ink); }
+  .bar .end.arm { background: var(--red); }
+  .goals { flex: 1; display: grid; gap: 10px; min-height: 230px; }
+  .goals.n2 { grid-template-columns: 1fr 1fr; }
+  .goals.n3 { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .gbtn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-weight: 900; box-shadow: 6px 6px 0 var(--ink); }
+  .gbtn:active, .gbtn.flash { transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--ink); filter: brightness(1.25); }
+  .gbtn .tn { font-size: 40px; letter-spacing: 2px; line-height: 1; }
+  .goals.n3 .gbtn .tn { font-size: 30px; letter-spacing: 1px; }
+  .gbtn .gl { font-size: 30px; line-height: 1; }
+  .gbtn .sm { font-size: 13px; font-weight: 700; opacity: .8; }
+  .gbtn.BLK { background: var(--BLK); color: var(--BLK-t); } .gbtn.WHT { background: var(--WHT); color: var(--WHT-t); } .gbtn.GRY { background: var(--GRY); color: var(--GRY-t); }
+
+  /* 누른 뒤 7초 고치기 */
+  .amend { border: 3px solid var(--ink); background: var(--yel); padding: 8px 10px; display: flex; flex-direction: column; gap: 7px; box-shadow: 4px 4px 0 var(--ink); }
+  .amend .head { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 17px; }
+  .amend .head .left { margin-left: auto; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .amend .timer { height: 6px; background: var(--ink); transform-origin: left; }
+  .amend .opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .amend .opts button { padding: 11px 0; font-size: 16px; font-weight: 900; }
+  .amend .opts button.on { background: var(--ink); color: #fff; }
+  .amend .opts button.cancel { background: var(--red); }
+
+  /* 기록 줄 */
+  .log { max-height: 32vh; overflow-y: auto; border-top: 3px solid var(--ink); }
+  .log .row { display: flex; align-items: center; gap: 8px; padding: 7px 2px; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .log .row .n { font-weight: 900; min-width: 26px; font-variant-numeric: tabular-nums; }
+  .log .row .tchip, .log .row .kchip { cursor: pointer; }
+  .log .row .tchip.none { background: #eee; color: var(--muted); }
+  .kchip { font-weight: 800; font-size: 13px; padding: 1px 7px; border: 2px solid var(--ink); background: var(--card); min-width: 36px; text-align: center; }
+  .kchip.k3 { background: var(--vio); } .kchip.kFT { background: var(--mint); } .kchip.k21, .kchip.k31 { background: var(--yel); }
   .log .row .t { font-variant-numeric: tabular-nums; }
   .log .row .e { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; }
-  .log .row .st { font-size: 12px; color: var(--warn); }
-  .log .row .del {
-    margin-left: auto; background: transparent; border: 1px solid var(--line); color: var(--muted);
-    border-radius: 8px; padding: 4px 10px; font-size: 13px;
-  }
-  .log .row .del.arm { border-color: var(--danger); color: #fff; background: var(--danger); }
-  .log .empty { color: var(--muted); font-size: 14px; padding: 8px 2px; }
+  .log .row .st { font-size: 12px; font-weight: 800; color: #b45309; }
+  .log .row .del { margin-left: auto; border-width: 2px; padding: 3px 10px; font-size: 13px; font-weight: 700; }
+  .log .row .del.arm { background: var(--red); }
+  .log .empty { color: var(--muted); font-size: 14px; padding: 10px 2px; }
+  .log .day { font-size: 13px; font-weight: 800; padding: 8px 2px 4px; }
   .others { color: var(--muted); font-size: 13px; }
   .toast {
-    position: fixed; left: 50%; top: 18%; transform: translateX(-50%); background: rgba(0,0,0,.85);
-    padding: 14px 22px; border-radius: 14px; font-size: 20px; font-weight: 800; pointer-events: none;
-    opacity: 0; transition: opacity .15s;
+    position: fixed; left: 50%; top: 16%; transform: translateX(-50%); background: var(--ink); color: #fff;
+    padding: 12px 22px; font-size: 22px; font-weight: 900; pointer-events: none; opacity: 0; transition: opacity .15s;
+    border: 3px solid var(--yel);
   }
   .toast.show { opacity: 1; }
 </style>
@@ -116,26 +160,38 @@
     </div>
   </section>
 
-  <!-- 2. 기록 -->
-  <section class="hidden" id="vRec" style="flex:1;display:flex;flex-direction:column;gap:14px;min-height:0">
+  <!-- 2. 기록 시작 전 -->
+  <section class="hidden" id="vReady" style="flex:1;display:flex;flex-direction:column;gap:14px;min-height:0">
     <div class="who">기록자 <b id="whoName"></b><button class="chg" id="chg">바꾸기</button></div>
-
-    <div class="qbar hidden" id="qbar">
-      <span class="qname" id="qname"></span>
-      <span class="elapsed" id="elapsed">00:00</span>
-      <button class="end" id="btnEnd">쿼터 종료</button>
-    </div>
-
+    <div class="setup" id="setupReady"></div>
     <button class="big start" id="btnStart">
-      <span class="main">쿼터 시작</span>
-      <span class="hint" id="startHint">휘슬이 울리면 누르세요</span>
+      <span class="main">기록 시작</span>
+      <span class="hint">쿼터 구분은 안 해도 돼요 · 끝날 때까지 켜 두세요</span>
     </button>
+    <div class="log" id="logReady"></div>
+  </section>
 
-    <button class="big goal hidden" id="btnGoal">
-      <span class="main">골!</span>
-      <span class="hint">공이 림을 통과하는 순간</span>
-    </button>
-
+  <!-- 3. 기록 중 -->
+  <section class="hidden" id="vRec" style="flex:1;display:flex;flex-direction:column;gap:12px;min-height:0">
+    <div class="bar">
+      <span class="rec">기록 중</span>
+      <span class="elapsed" id="elapsed">00:00</span>
+      <span class="cnt" id="cnt"></span>
+      <button class="end" id="btnEnd">기록 끝</button>
+    </div>
+    <div class="cur" id="curLine"></div>
+    <div class="panel setup hidden" id="setupRec"></div>
+    <div class="goals" id="goals"></div>
+    <div class="amend hidden" id="amend">
+      <div class="head"><span id="amTeam" class="tchip"></span><span id="amText"></span><span class="left" id="amLeft"></span></div>
+      <div class="timer" id="amTimer"></div>
+      <div class="opts">
+        <button id="am3">3점</button>
+        <button id="amFT">자유투</button>
+        <button id="am1">+1 앤드원</button>
+        <button id="amX" class="cancel">취소</button>
+      </div>
+    </div>
     <div class="others" id="others"></div>
     <div class="log" id="log"></div>
   </section>
@@ -154,7 +210,7 @@
       const a = document.createElement('a');
       a.href = 'intent://' + u + '#Intent;scheme=https;package=com.android.chrome;end';
       a.textContent = '앱 안 브라우저예요. 크롬으로 열기';
-      a.style.cssText = 'display:block;padding:12px 16px;background:#f5a524;color:#111;font-weight:800;text-align:center;text-decoration:none';
+      a.style.cssText = 'display:block;padding:12px 16px;background:#FFD338;color:#111;font-weight:800;text-align:center;text-decoration:none;border-bottom:3px solid #111';
       document.body.prepend(a);
     });
   }
@@ -164,7 +220,16 @@
   const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indmd3p4bnllbHBiZ2p4bG92amdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNDM3NDcsImV4cCI6MjA3NTkxOTc0N30.STu6r2vK5ghEBXHXF_IYdJPsjaxc0efUEUn3pbSrAXM';
   const HDR = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
   const $ = id => document.getElementById(id);
-  const KIND = { goal: '골', q_start: '시작', q_end: '종료' };
+  const AMEND_MS = 7000;                                     // 누른 뒤 득점 종류를 고칠 수 있는 시간 (사용자 2026-11-24 「7초 정도」)
+  const ALL_TEAMS = ['BLK', 'WHT', 'GRY'];
+  const TEAM_OF = { '팀블랙': 'BLK', '팀화이트': 'WHT', '팀그레이': 'GRY', '블랙': 'BLK', '화이트': 'WHT', '그레이': 'GRY' };
+  // 득점 종류 = 골인 체크 툴 마크의 kind 와 같은 값
+  const KLABEL = { '2': '2점', '3': '3점', 'FT': '자유투', '2+1': '앤드원 2+1', '3+1': '앤드원 3+1' };
+  const KSHORT = { '2': '2', '3': '3', 'FT': 'FT', '2+1': '2+1', '3+1': '3+1' };
+  const KORDER = ['2', '3', 'FT', '2+1', '3+1'];
+  const kText = t => t.sk === 'FT' && t.ft > 1 ? `자유투 ×${t.ft}` : KLABEL[t.sk || '2'];
+  const kShort = t => t.sk === 'FT' && t.ft > 1 ? `FT×${t.ft}` : KSHORT[t.sk || '2'];
+  const kClass = t => 'k' + (t.sk || '2').replace('+', '');
 
   // ---------- 저장 (localStorage 가 막혀도 페이지는 돈다) ----------
   const store = {
@@ -182,7 +247,8 @@
   const kst = ms => new Date(ms + 9 * 3600e3);
   const kstDate = ms => kst(ms).toISOString().slice(0, 10);
   const hms = ms => kst(ms).toISOString().slice(11, 19);
-  const mmss = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+  const mmss = ms => { const s = Math.max(0, Math.floor(ms / 1000)); const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60;
+    return (h ? h + ':' + String(m).padStart(2, '0') : String(m).padStart(2, '0')) + ':' + String(s % 60).padStart(2, '0'); };
   const WD = ['일', '월', '화', '수', '목', '금', '토'];
 
   // ---------- 시계 보정 (서버 - 폰) ----------
@@ -206,10 +272,16 @@
   }
 
   // ---------- 상태 ----------
-  // st = { date, recorder, other, running, q, qStart, taps: [{uuid, kind, at, q, sent, del}] }
+  // st = { date, recorder, other, spot: 'CAM'|'SB'|'?'|null, left, right, running, startAt,
+  //        taps: [{uuid, team, side, pair: [L, R], spot, sk, ft, at, sent, del}] }
+  // spot = 기록자가 선 편 (CAM 카메라 쪽 = 스코어보드 맞은편 · SB 스코어보드 쪽) · left/right = 그 자리에서 본 왼쪽/오른쪽 팀
+  // 2026-11-24 개편 전 상태(q · qStart · kind)는 버린다 - 그날 기록은 이미 서버에 있다
   let st = store.get('goal_state', null);
   const today = kstDate(serverNow());
-  if (!st || st.date !== today) st = { date: today, recorder: st && st.recorder, other: st && st.other, running: false, q: 0, qStart: null, taps: [] };
+  if (!st || st.date !== today || !('left' in st)) {
+    st = { date: today, recorder: st && st.recorder, other: st && st.other, spot: null, left: null, right: null, running: false, startAt: null,
+           taps: (st && st.date === today && Array.isArray(st.taps)) ? st.taps.filter(t => t.kind === 'goal' || t.team) : [] };
+  }
   const save = () => store.set('goal_state', st);
   save();
 
@@ -230,10 +302,20 @@
         const op = queue[0];
         try {
           if (op.op === 'tap') {
+            const t = st.taps.find(x => x.uuid === op.uuid);
+            // 아직 안 보낸 탭은 보내는 순간의 팀 · 종류로 보낸다 (7초 고치기가 끝나기 전에 보내도 뒤에 edit 가 따라간다)
             await rpc('ercc_goal_tap', {
-              p_tap_uuid: op.uuid, p_device: device, p_kind: op.kind, p_recorder: op.recorder, p_other: !!op.other,
-              p_client_ms: op.client, p_offset_ms: op.offset, p_rtt_ms: op.rtt, p_ua: navigator.userAgent });
-            const t = st.taps.find(x => x.uuid === op.uuid); if (t) t.sent = true;
+              p_tap_uuid: op.uuid, p_device: device, p_kind: op.kind || 'goal', p_recorder: op.recorder, p_other: !!op.other,
+              p_client_ms: op.client, p_offset_ms: op.offset, p_rtt_ms: op.rtt, p_ua: navigator.userAgent,
+              p_team: t ? t.team : op.team || null, p_score_kind: t ? t.sk : op.sk || null, p_ft: t ? (t.ft || null) : null,
+              p_side: t ? t.side : null, p_spot: t && t.spot !== '?' ? t.spot : null });
+            if (t) { t.sent = true; t.sentSig = sig(t); }
+          } else if (op.op === 'edit') {
+            const t = st.taps.find(x => x.uuid === op.uuid);
+            if (t && !t.del && t.sentSig !== sig(t)) {
+              await rpc('ercc_goal_edit', { p_tap_uuid: t.uuid, p_device: device, p_team: t.team, p_score_kind: t.sk, p_ft: t.ft || null, p_side: t.side });
+              t.sentSig = sig(t);
+            }
           } else if (op.op === 'undo') {
             await rpc('ercc_goal_undo', { p_tap_uuid: op.uuid, p_device: device });
           }
@@ -245,6 +327,7 @@
       }
     } finally { flushing = false; paintLog(); paintSync(); }
   }
+  const sig = t => `${t.team}|${t.side}|${t.sk}|${t.ft || ''}`;
   setInterval(flush, 3000);
   addEventListener('online', flush);
 
@@ -259,19 +342,25 @@
   }
 
   // ---------- 기록 ----------
-  function record(kind) {
+  function recordGoal(side) {
     const client = Date.now();
-    const t = { uuid: uuid(), kind, at: client + offset, q: st.q, sent: false, del: false };
+    const t = { uuid: uuid(), team: side === 'L' ? st.left : st.right, side, pair: [st.left, st.right], spot: st.spot,
+                sk: '2', ft: null, at: client + offset, sent: false, del: false };
     st.taps.push(t); save();
-    queue.push({ op: 'tap', uuid: t.uuid, kind, recorder: st.recorder, other: st.other, client, offset, rtt });
+    queue.push({ op: 'tap', uuid: t.uuid, kind: 'goal', recorder: st.recorder, other: st.other, client, offset, rtt });
     saveQ(); flush();
     return t;
+  }
+  function editTap(t) {               // 팀 · 종류를 바꿨다 → 보낸 뒤면 edit 를 줄에 (보내기 전이면 보낼 때 새 값으로 간다)
+    save();
+    if (!queue.some(o => o.op === 'edit' && o.uuid === t.uuid)) queue.push({ op: 'edit', uuid: t.uuid });
+    saveQ(); flush();
   }
   function removeTap(t) {
     t.del = true; save();
     const i = queue.findIndex(o => o.op === 'tap' && o.uuid === t.uuid);
-    if (i >= 0) { queue.splice(i, 1); }               // 아직 안 보낸 것은 줄에서 빼기만
-    else queue.push({ op: 'undo', uuid: t.uuid });
+    if (i >= 0) { queue = queue.filter(o => o.uuid !== t.uuid); }   // 아직 안 보낸 것은 줄에서 빼기만
+    else { queue = queue.filter(o => !(o.op === 'edit' && o.uuid === t.uuid)); queue.push({ op: 'undo', uuid: t.uuid }); }
     saveQ(); flush();
   }
 
@@ -282,68 +371,181 @@
     clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 900);
   }
   function buzz(p) { try { navigator.vibrate && navigator.vibrate(p); } catch {} }
+  const chip = team => `<span class="tchip ${team || 'none'}">${team || '팀?'}</span>`;
 
   function show() {
     const d = kst(serverNow());
     $('today').textContent = `${String(d.getUTCFullYear()).slice(2)}.${d.getUTCMonth() + 1}.${d.getUTCDate()} (${WD[d.getUTCDay()]})`;
-    $('vPick').classList.toggle('hidden', !!st.recorder);
-    $('vRec').classList.toggle('hidden', !st.recorder);
-    if (!st.recorder) { loadRoster(); return; }
+    const v = !st.recorder ? 'pick' : st.running ? 'rec' : 'ready';
+    $('vPick').classList.toggle('hidden', v !== 'pick');
+    $('vReady').classList.toggle('hidden', v !== 'ready');
+    $('vRec').classList.toggle('hidden', v !== 'rec');
+    if (v === 'pick') { loadRoster(); return; }
     $('whoName').textContent = st.recorder + (st.other ? ' (기타)' : '');
-    $('qbar').classList.toggle('hidden', !st.running);
-    $('btnStart').classList.toggle('hidden', st.running);
-    $('btnGoal').classList.toggle('hidden', !st.running);
-    $('qname').textContent = `${st.q}번째 쿼터`;
-    $('startHint').textContent = `${st.q + 1}번째 쿼터 · 휘슬이 울리면 누르세요`;
-    disarmEnd();
+    if (!st.left || !st.right) { [st.left, st.right] = defaultTeams(); save(); }
+    if (v === 'ready') paintSetup($('setupReady'));
+    if (v === 'rec') { $('setupRec').classList.add('hidden'); paintCur(); paintGoals(); }
+    disarmEnd(); closeAmend();
     paintLog(); tick(); wake();
   }
 
-  function paintLog() {
-    const el = $('log');
-    if (!st.recorder) return;
-    // 진행 중이면 이번 쿼터만, 아니면 오늘 전부 (최근 것이 위)
-    const rows = st.taps.filter(t => !t.del && (!st.running || t.q === st.q)).slice().reverse();
-    const goals = st.taps.filter(t => !t.del && t.kind === 'goal');
-    if (!rows.length) { el.innerHTML = `<div class="empty">${st.running ? '이번 쿼터 골 기록 없음' : '오늘 기록 없음'}</div>`; return; }
-    el.innerHTML = '';
-    rows.forEach(t => {
-      const qs = st.taps.find(x => !x.del && x.kind === 'q_start' && x.q === t.q);
-      const n = t.kind === 'goal' ? goals.filter(g => g.q === t.q && g.at <= t.at).length : 0;
-      const row = document.createElement('div'); row.className = 'row';
-      row.innerHTML =
-        `<span class="k">${t.kind === 'goal' ? '골 ' + n : 'Q' + t.q + ' ' + KIND[t.kind]}</span>` +
-        `<span class="t">${hms(t.at)}</span>` +
-        (qs && t.kind !== 'q_start' ? `<span class="e">+${mmss(t.at - qs.at)}</span>` : '') +
-        (t.sent ? '' : '<span class="st">대기</span>');
-      // 골과 진행 중 쿼터의 시작만 지울 수 있다 (시작을 잘못 눌렀을 때)
-      if (t.kind === 'goal' || (t.kind === 'q_start' && st.running && t.q === st.q)) {
-        const b = document.createElement('button'); b.className = 'del'; b.textContent = '삭제';
+  // 왼쪽/오른쪽 팀 기본값 = 명단 팀 칸의 앞 두 팀 (없으면 BLK · WHT)
+  function defaultTeams() {
+    const c = store.get('goal_roster', null);
+    const ts = c && c.teams ? ALL_TEAMS.filter(x => c.teams.includes(x)) : [];
+    return ts.length >= 2 ? ts.slice(0, 2) : ['BLK', 'WHT'];
+  }
+  const SPOT = { CAM: '카메라 쪽', SB: '스코어보드 쪽', '?': '자리 모름' };
+  // 자리 · 좌우 팀 고르기 (준비 화면과 기록 중 「바꾸기」 판이 같이 쓴다)
+  function paintSetup(box, onDone) {
+    box.innerHTML = `
+      <span class="lbl">1. 내가 선 자리</span>
+      <div class="spots">
+        <button data-s="CAM">카메라 쪽<small>스코어보드 맞은편</small></button>
+        <button data-s="SB">스코어보드 쪽<small>카메라 맞은편</small></button>
+        <button class="unk" data-s="?">잘 모르겠음</button>
+      </div>
+      <span class="lbl">2. 내 자리에서 본 팀</span>
+      <div class="sides">
+        <div class="col" data-side="L"><span>◀ 내 왼쪽</span></div>
+        <div class="col" data-side="R"><span>내 오른쪽 ▶</span></div>
+      </div>
+      <span class="help">골 버튼이 이 순서대로 놓여요. 코트를 바꾸면 기록 중 「⇄ 좌우」, 게임이 바뀌면 「설정」에서 고쳐요.</span>
+      ${onDone ? '<button class="done">확인</button>' : ''}`;
+    box.querySelectorAll('.spots button').forEach(b => {
+      b.classList.toggle('on', st.spot === b.dataset.s);
+      b.onclick = () => { st.spot = b.dataset.s; save(); paintSetup(box, onDone); };
+    });
+    box.querySelectorAll('.sides .col').forEach(col => {
+      const side = col.dataset.side;
+      ALL_TEAMS.forEach(tm => {
+        const b = document.createElement('button'); b.className = tm; b.textContent = tm;
+        b.classList.toggle('on', (side === 'L' ? st.left : st.right) === tm);
         b.onclick = () => {
-          if (!b.classList.contains('arm')) {
-            b.classList.add('arm'); b.textContent = '삭제?';
-            setTimeout(() => { if (b.isConnected) { b.classList.remove('arm'); b.textContent = '삭제'; } }, 3000);
-            return;
-          }
-          removeTap(t);
-          if (t.kind === 'q_start') {
-            st.taps.filter(x => x.q === t.q && !x.del).forEach(removeTap);
-            st.running = false; st.q -= 1; st.qStart = null; save(); toast('쿼터 시작 취소'); show(); return;
-          }
-          toast('골 삭제'); paintLog();
+          const other = side === 'L' ? st.right : st.left, mine = side === 'L' ? st.left : st.right;
+          if (tm === other) { if (side === 'L') { st.left = tm; st.right = mine; } else { st.right = tm; st.left = mine; } }  // 맞은편 팀을 고르면 서로 바꾼다
+          else if (side === 'L') st.left = tm; else st.right = tm;
+          save(); paintSetup(box, onDone);
         };
-        row.appendChild(b);
+        col.appendChild(b);
+      });
+    });
+    if (onDone) box.querySelector('.done').onclick = onDone;
+  }
+  function paintCur() {
+    const el = $('curLine');
+    el.innerHTML = `<span>${SPOT[st.spot] || '자리 미정'}</span><span>·</span>${chip(st.left)}<span>|</span>${chip(st.right)}`
+      + `<span class="sp"></span><button id="btnSwap">⇄ 좌우</button><button id="btnSet">설정</button>`;
+    const sw = $('btnSwap');
+    sw.onclick = () => {                               // 코트를 바꿨을 때 · 잘못 누르지 않게 두 번
+      if (!sw.classList.contains('arm')) {
+        sw.classList.add('arm'); sw.textContent = '바꿀까요?';
+        setTimeout(() => { if (sw.isConnected) { sw.classList.remove('arm'); sw.textContent = '⇄ 좌우'; } }, 3000);
+        return;
       }
+      [st.left, st.right] = [st.right, st.left]; save(); toast(`◀ ${st.left} | ${st.right} ▶`); paintCur(); paintGoals();
+    };
+    $('btnSet').onclick = () => {
+      const box = $('setupRec');
+      if (!box.classList.contains('hidden')) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      paintSetup(box, () => { box.classList.add('hidden'); paintCur(); paintGoals(); });
+    };
+  }
+  function paintGoals() {
+    const box = $('goals'); box.innerHTML = ''; box.className = 'goals n2';
+    [['L', st.left], ['R', st.right]].forEach(([side, tm]) => {
+      const b = document.createElement('button');
+      b.className = 'gbtn ' + tm;
+      b.innerHTML = `<span class="tn">${tm}</span><span class="gl">골!</span><span class="sm">${side === 'L' ? '◀ 내 왼쪽' : '내 오른쪽 ▶'}</span>`;
+      b.addEventListener('pointerdown', e => { e.preventDefault(); onGoal(side, b); });
+      box.appendChild(b);
+    });
+  }
+
+  function paintLog() {
+    if (!st.recorder) return;
+    const el = st.running ? $('log') : $('logReady');
+    const live = st.taps.filter(t => !t.del);
+    // 기록 중이면 이번 기록(시작 뒤)만, 아니면 오늘 전부 (최근 것이 위)
+    const rows = live.filter(t => !st.running || t.at >= (st.startAt || 0)).slice().reverse();
+    $('cnt').textContent = st.running ? `골 ${live.filter(t => t.at >= (st.startAt || 0)).length}` : '';
+    if (!rows.length) { el.innerHTML = `<div class="empty">${st.running ? '아직 골 기록 없음' : '오늘 기록 없음'}</div>`; return; }
+    el.innerHTML = st.running ? '' : `<div class="day">오늘 기록 ${rows.length}개 · 팀 · 종류를 눌러 고칠 수 있어요</div>`;
+    rows.forEach(t => {
+      const n = live.indexOf(t) + 1;
+      const row = document.createElement('div'); row.className = 'row';
+      row.innerHTML = `<span class="n">${n}</span>${chip(t.team)}<span class="kchip ${kClass(t)}">${kShort(t)}</span>`
+        + `<span class="t">${hms(t.at)}</span>`
+        + (st.running && st.startAt ? `<span class="e">+${mmss(t.at - st.startAt)}</span>` : '')
+        + (t.sent ? '' : '<span class="st">대기</span>');
+      // 팀 칩 = 반대편 팀으로 (누를 때의 좌우 짝 안에서) · 종류 칩 = 2 → 3 → FT → 2+1 → 3+1
+      row.querySelector('.tchip').onclick = () => {
+        const pair = t.pair || [st.left, st.right];
+        t.side = t.side === 'L' ? 'R' : 'L'; t.team = t.side === 'L' ? pair[0] : pair[1];
+        editTap(t); paintLog(); if (amendT === t) paintAmend();
+      };
+      row.querySelector('.kchip').onclick = () => {
+        t.sk = KORDER[(KORDER.indexOf(t.sk || '2') + 1) % KORDER.length]; t.ft = t.sk === 'FT' ? 1 : null;
+        editTap(t); paintLog(); if (amendT === t) paintAmend();
+      };
+      const b = document.createElement('button'); b.className = 'del'; b.textContent = '삭제';
+      b.onclick = () => {
+        if (!b.classList.contains('arm')) {
+          b.classList.add('arm'); b.textContent = '삭제?';
+          setTimeout(() => { if (b.isConnected) { b.classList.remove('arm'); b.textContent = '삭제'; } }, 3000);
+          return;
+        }
+        removeTap(t); if (amendT === t) closeAmend();
+        toast('골 삭제'); paintLog();
+      };
+      row.appendChild(b);
       el.appendChild(row);
     });
   }
 
+  // ---------- 누른 뒤 7초 고치기 ----------
+  let amendT = null, amendEnd = 0, amendTick = null;
+  function openAmend(t) {
+    amendT = t; amendEnd = Date.now() + AMEND_MS;
+    $('amend').classList.remove('hidden'); paintAmend();
+    clearInterval(amendTick); amendTick = setInterval(stepAmend, 100); stepAmend();
+  }
+  function stepAmend() {
+    const left = amendEnd - Date.now();
+    if (left <= 0 || !amendT) { closeAmend(); return; }
+    $('amTimer').style.transform = `scaleX(${left / AMEND_MS})`;
+    $('amLeft').textContent = `${Math.ceil(left / 1000)}초`;
+  }
+  function closeAmend() { amendT = null; clearInterval(amendTick); $('amend').classList.add('hidden'); }
+  function paintAmend() {
+    const t = amendT; if (!t) return;
+    $('amTeam').className = 'tchip ' + t.team; $('amTeam').textContent = t.team;
+    $('amText').textContent = `방금 ${kText(t)}`;
+    $('am3').classList.toggle('on', t.sk === '3' || t.sk === '3+1');
+    $('amFT').classList.toggle('on', t.sk === 'FT');
+    $('amFT').textContent = t.sk === 'FT' && t.ft > 1 ? `자유투 ×${t.ft}` : '자유투';
+    $('am1').classList.toggle('on', t.sk === '2+1' || t.sk === '3+1');
+  }
+  function amend(fn) {
+    const t = amendT; if (!t) return;
+    fn(t); amendEnd = Date.now() + AMEND_MS;          // 고칠 때마다 7초를 다시 준다
+    editTap(t); paintAmend(); paintLog(); buzz(30);
+  }
+  // 3점: 2 ↔ 3 (앤드원이면 2+1 ↔ 3+1)
+  $('am3').onclick = () => amend(t => { t.sk = { '2': '3', '3': '2', '2+1': '3+1', '3+1': '2+1', 'FT': '3' }[t.sk || '2']; t.ft = null; });
+  // 자유투: 1개 → 2개 → 3개 → 1개 (자유투를 끄려면 3점 · 취소 · 기록 줄의 종류 칩)
+  $('amFT').onclick = () => amend(t => { if (t.sk === 'FT') t.ft = (t.ft || 1) % 3 + 1; else { t.sk = 'FT'; t.ft = 1; } });
+  // +1 앤드원: 2 ↔ 2+1 · 3 ↔ 3+1
+  $('am1').onclick = () => amend(t => { t.sk = { '2': '2+1', '2+1': '2', '3': '3+1', '3+1': '3', 'FT': '2+1' }[t.sk || '2']; t.ft = null; });
+  $('amX').onclick = () => { const t = amendT; if (!t) return; removeTap(t); closeAmend(); toast('취소함'); paintLog(); };
+
   function tick() {
-    if (st.running && st.qStart) $('elapsed').textContent = mmss(serverNow() - st.qStart);
+    if (st.running && st.startAt) $('elapsed').textContent = mmss(serverNow() - st.startAt);
   }
   setInterval(tick, 500);
 
-  // 화면 꺼짐 막기 (쿼터 진행 중)
+  // 화면 꺼짐 막기 (기록 중)
   let lock = null;
   async function wake() {
     try {
@@ -355,51 +557,49 @@
 
   // ---------- 버튼 ----------
   $('btnStart').onclick = () => {
-    st.q += 1; st.running = true;
-    const t = record('q_start'); st.qStart = t.at; save();
-    buzz(80); toast(`${st.q}번째 쿼터 시작`); show();
+    if (!st.spot) { toast('내가 선 자리를 골라 주세요'); return; }
+    st.running = true; st.startAt = serverNow(); save();
+    buzz(80); toast('기록 시작'); show();
   };
-  let lastGoal = 0;
-  $('btnGoal').onclick = () => {
+  const lastGoal = {};
+  function onGoal(side, b) {
     const now = Date.now();
-    if (now - lastGoal < 800) return;              // 손이 두 번 닿은 것
-    lastGoal = now;
-    record('goal');
-    const n = st.taps.filter(t => !t.del && t.kind === 'goal' && t.q === st.q).length;
-    buzz(60); toast(`골 ${n}`);
-    const b = $('btnGoal'); b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 150);
-    paintLog();
-  };
+    if (now - (lastGoal[side] || 0) < 800) return;    // 손이 두 번 닿은 것
+    lastGoal[side] = now;
+    const t = recordGoal(side);
+    buzz(60); toast(`${t.team} 골`);
+    b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 150);
+    openAmend(t); paintLog();
+  }
   let endTimer;
-  function disarmEnd() { const b = $('btnEnd'); b.classList.remove('arm'); b.textContent = '쿼터 종료'; clearTimeout(endTimer); }
+  function disarmEnd() { const b = $('btnEnd'); b.classList.remove('arm'); b.textContent = '기록 끝'; clearTimeout(endTimer); }
   $('btnEnd').onclick = () => {
     const b = $('btnEnd');
     if (!b.classList.contains('arm')) {
-      b.classList.add('arm'); b.textContent = '종료 확인'; endTimer = setTimeout(disarmEnd, 3000); return;
+      b.classList.add('arm'); b.textContent = '끝낼까요?'; endTimer = setTimeout(disarmEnd, 3000); return;
     }
-    record('q_end'); st.running = false; st.qStart = null; save();
-    buzz([60, 60, 60]); toast(`${st.q}번째 쿼터 종료`); show();
+    st.running = false; st.startAt = null; save();
+    buzz([60, 60, 60]); toast('기록 끝'); show();
   };
-  $('chg').onclick = () => {
-    if (st.running) { toast('쿼터 종료 뒤에 바꿀 수 있어요'); return; }
-    st.recorder = null; st.other = false; save(); show();
-  };
+  $('chg').onclick = () => { st.recorder = null; st.other = false; save(); show(); };
 
   // ---------- 명단 ----------
   let rosterLoaded = false;
   async function loadRoster() {
-    if (rosterLoaded) return;
+    if (rosterLoaded) { paintNames(store.get('goal_roster', { names: [] }).names); return; }
     const box = $('names'); box.innerHTML = '';
     try {
       const r = await fetch(`${SUPABASE_URL}/rest/v1/ercc_roster?select=game_date&game_date=lte.${today}&order=game_date.desc&limit=1`, { headers: HDR });
       const last = (await r.json())[0];
-      let names = [];
+      let names = [], teams = [];
       if (last) {
-        const r2 = await fetch(`${SUPABASE_URL}/rest/v1/ercc_roster?select=name&game_date=eq.${last.game_date}`, { headers: HDR });
-        names = (await r2.json()).map(x => x.name).sort((a, b) => a.localeCompare(b, 'ko'));
+        const r2 = await fetch(`${SUPABASE_URL}/rest/v1/ercc_roster?select=name,team&game_date=eq.${last.game_date}`, { headers: HDR });
+        const rows = await r2.json();
+        names = rows.map(x => x.name).sort((a, b) => a.localeCompare(b, 'ko'));
+        teams = [...new Set(rows.map(x => TEAM_OF[(x.team || '').trim()]).filter(Boolean))];
         const [y, m, d] = last.game_date.split('-');
         $('rosterSub').textContent = `${y.slice(2)}.${+m}.${+d} 출전 명단 · 가나다순`;
-        store.set('goal_roster', { date: last.game_date, names });
+        store.set('goal_roster', { date: last.game_date, names, teams });
       }
       rosterLoaded = true; paintNames(names);
     } catch {
@@ -440,6 +640,8 @@
   setInterval(others, 20000);
   setInterval(syncClock, 5 * 60e3);
 
+  // 명단(팀)을 미리 받아 둔다 - 기록자를 이미 고른 폰도 오늘 팀 기본값을 알 수 있게
+  if (st.recorder && !st.running && !store.get('goal_roster', null)) loadRoster().then(() => { [st.left, st.right] = defaultTeams(); save(); show(); });
   show();
   syncClock().then(() => { flush(); others(); });
 })();
